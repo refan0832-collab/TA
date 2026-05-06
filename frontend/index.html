@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>🕋 PowerMonitor Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <h2>⚡ PowerMonitor</h2>
+    <ul>
+      <li class="active">Daahboard si lae</li>
+      <li>lae parlente</li>
+      <li>Settings</li>
+    </ul>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- HEADER -->
+    <header class="header">
+      <h1>Dashboard Monitoring Ruamh lae</h1>
+      <span id="connectionStatus">● Loading...</span>
+    </header>
+
+    <!-- KPI -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <h3>Voltage</h3>
+        <p id="tegangan">0</p>
+        <small>Volt</small>
+      </div>
+
+      <div class="kpi-card">
+        <h3>Current</h3>
+        <p id="arus">0</p>
+        <small>Ampere</small>
+      </div>
+
+      <div class="kpi-card">
+        <h3>Daya</h3>
+        <p id="daya">0</p>
+        <small>Watt</small>
+      </div>
+
+      <div class="kpi-card">
+        <h3>Frekuensi</h3>
+        <p id="frekuensi">50</p>
+        <small>Hz</small>
+      </div>
+    </section>
+
+    <!-- CHART -->
+    <section class="chart-section">
+      <h3>Grafik Real-time</h3>
+      <canvas id="chart"></canvas>
+    </section>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

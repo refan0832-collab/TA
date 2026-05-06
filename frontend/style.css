@@ -1,0 +1,309 @@
+/* ========================= */
+/* GLOBAL */
+/* ========================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: white;
+    overflow-x: hidden;
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ========================= */
+/* SIDEBAR */
+/* ========================= */
+.sidebar {
+    width: 250px;
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(20px);
+    padding: 2rem 1.5rem;
+    border-right: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar h2 {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sidebar ul {
+    list-style: none;
+}
+
+.sidebar li {
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sidebar li:hover,
+.sidebar li.active {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+/* ========================= */
+/* MAIN */
+/* ========================= */
+.main {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+/* ========================= */
+/* HEADER */
+/* ========================= */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+#connectionStatus {
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 500;
+    background: rgba(34, 197, 94, 0.2);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    transition: 0.3s;
+}
+
+#connectionStatus.offline {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ========================= */
+/* KPI GRID */
+/* ========================= */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.kpi-card {
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+.kpi-card.voltage::before { background: linear-gradient(90deg, #3b82f6, #1d4ed8); }
+.kpi-card.current::before { background: linear-gradient(90deg, #22c55e, #16a34a); }
+.kpi-card.power::before { background: linear-gradient(90deg, #f97316, #ea580c); }
+.kpi-card.frequency::before { background: linear-gradient(90deg, #a855f7, #9333ea); }
+
+.kpi-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+}
+
+.kpi-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.8;
+}
+
+.kpi-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.kpi-label {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ========================= */
+/* CONTENT GRID */
+/* ========================= */
+.content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+}
+
+/* ========================= */
+/* CHART */
+/* ========================= */
+.chart-section {
+    background: rgba(30, 41, 59, 0.8);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h3 {
+    font-size: 1.25rem;
+}
+
+.chart-container {
+    height: 450px;
+}
+
+/* ========================= */
+/* DEVICE STATUS */
+/* ========================= */
+.status-section {
+    background: rgba(30, 41, 59, 0.8);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.device-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.device-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    transition: 0.3s;
+}
+
+.device-card.online { background: rgba(34, 197, 94, 0.2); }
+.device-card.warning { background: rgba(249, 115, 22, 0.2); }
+.device-card.offline { background: rgba(239, 68, 68, 0.2); }
+
+.device-card:hover {
+    transform: translateX(5px);
+}
+
+/* ========================= */
+/* 🔴 AMPERE WARNING SYSTEM */
+/* ========================= */
+
+/* teks ampere berkedip */
+.blink-red {
+    color: #ef4444 !important;
+    font-weight: bold;
+    animation: blinkRed 0.7s infinite;
+}
+
+/* card ampere efek pulse */
+.warning-card {
+    position: relative;
+    border: 1px solid #ef4444;
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.8);
+    animation: pulseRed 1s infinite;
+}
+
+/* overlay merah */
+.warning-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(239, 68, 68, 0.15);
+    animation: flashOverlay 0.7s infinite;
+    pointer-events: none;
+}
+
+/* animasi teks */
+@keyframes blinkRed {
+    0% { opacity: 1; }
+    50% { opacity: 0.2; }
+    100% { opacity: 1; }
+}
+
+/* animasi glow */
+@keyframes pulseRed {
+    0% {
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(239, 68, 68, 1);
+        transform: scale(1.05);
+    }
+    100% {
+        box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        transform: scale(1);
+    }
+}
+
+/* overlay berkedip */
+@keyframes flashOverlay {
+    0% { opacity: 0.1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 0.1; }
+}
+
+/* ========================= */
+/* RESPONSIVE */
+/* ========================= */
+@media (max-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+    }
+
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

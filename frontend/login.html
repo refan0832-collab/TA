@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ PowerMonitor — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="login-body">
+
+  <!-- Animated background grid -->
+  <div class="login-bg">
+    <div class="grid-lines"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="login-wrapper">
+
+    <!-- Brand -->
+    <div class="login-brand">
+      <div class="brand-icon">⚡</div>
+      <h1 class="brand-title">PowerMonitor</h1>
+      <p class="brand-sub">ESP32 Real-Time Energy Dashboard</p>
+    </div>
+
+    <!-- Card -->
+    <div class="login-card" id="loginCard">
+
+      <div class="login-card-header">
+        <h2>Masuk ke Sistem</h2>
+        <p>Silakan login untuk melanjutkan</p>
+      </div>
+
+      <!-- Alert -->
+      <div class="login-alert" id="loginAlert" style="display:none;"></div>
+
+      <!-- Form -->
+      <div class="login-form">
+
+        <div class="form-group">
+          <label for="loginUsername">Username</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input
+              type="text"
+              id="loginUsername"
+              placeholder="Masukkan username"
+              autocomplete="username"
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input
+              type="password"
+              id="loginPassword"
+              placeholder="Masukkan password"
+              autocomplete="current-password"
+            >
+            <button class="toggle-pass" type="button" id="togglePass" title="Tampilkan password">👁</button>
+          </div>
+        </div>
+
+        <button class="login-btn" id="loginBtn" type="button">
+          <span class="btn-text">Login</span>
+          <span class="btn-loader" style="display:none;">⏳</span>
+        </button>
+
+      </div>
+
+      <div class="login-footer">
+        <small>Default: <code>admin</code> / <code>admin123</code></small>
+      </div>
+
+    </div>
+
+    <p class="login-copy">© 2025 PowerMonitor — ESP32 IoT System</p>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
