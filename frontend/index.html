@@ -1,70 +1,133 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-  <meta charset="UTF-8">
-  <title>🕋 PowerMonitor Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>⚡ PowerMonitor Dashboard</title>
+
+  <!-- CHART JS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="style.css">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
-<div class="container">
+  <!-- TOGGLE BUTTON (tampil di semua ukuran layar) -->
+  <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <h2>⚡ PowerMonitor</h2>
-    <ul>
-      <li class="active">Daahboard si lae</li>
-      <li>lae parlente</li>
-      <li>Settings</li>
-    </ul>
-  </aside>
+  <!-- OVERLAY (gelap saat sidebar terbuka) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-  <!-- MAIN -->
-  <main class="main">
+  <div class="container" id="container">
 
-    <!-- HEADER -->
-    <header class="header">
-      <h1>Dashboard Monitoring Ruamh lae</h1>
-      <span id="connectionStatus">● Loading...</span>
-    </header>
+    <!-- SIDEBAR (tersembunyi default) -->
+    <aside class="sidebar" id="sidebar">
 
-    <!-- KPI -->
-    <section class="kpi-grid">
-      <div class="kpi-card">
-        <h3>Voltage</h3>
-        <p id="tegangan">0</p>
-        <small>Volt</small>
-      </div>
+      <h2>Menu</h2>
 
-      <div class="kpi-card">
-        <h3>Current</h3>
-        <p id="arus">0</p>
-        <small>Ampere</small>
-      </div>
+      <ul>
+        <li class="active">📊 Dashboard</li>
+        <li>📈 History</li>
+        <li>⚙️ Settings</li>
+      </ul>
 
-      <div class="kpi-card">
-        <h3>Daya</h3>
-        <p id="daya">0</p>
-        <small>Watt</small>
-      </div>
+    </aside>
 
-      <div class="kpi-card">
-        <h3>Frekuensi</h3>
-        <p id="frekuensi">50</p>
-        <small>Hz</small>
-      </div>
-    </section>
+    <!-- MAIN -->
+    <main class="main" id="main">
 
-    <!-- CHART -->
-    <section class="chart-section">
-      <h3>Grafik Real-time</h3>
-      <canvas id="chart"></canvas>
-    </section>
+      <!-- HEADER -->
+      <header class="header">
 
-  </main>
-</div>
+        <h1>Dashboard Monitoring Rumah</h1>
 
-<script src="app.js"></script>
+        <!-- WAKTU REAL-TIME + STATUS (tambahan baru) -->
+        <div class="header-right">
+          <div class="clock" id="clock">
+            <span class="clock-time" id="clockTime">00:00:00</span>
+            <span class="clock-date" id="clockDate">Senin, 1 Januari 2025</span>
+          </div>
+
+          <!-- STATUS -->
+          <span id="connectionStatus">● Offline</span>
+        </div>
+
+      </header>
+
+      <!-- KPI -->
+      <section class="kpi-grid">
+
+        <!-- VOLTAGE -->
+        <div class="kpi-card voltage">
+
+          <div class="kpi-icon">⚡</div>
+
+          <div class="kpi-value" id="tegangan">-</div>
+
+          <div class="kpi-label">Voltage</div>
+
+        </div>
+
+        <!-- CURRENT -->
+        <div class="kpi-card current">
+
+          <div class="kpi-icon">🔌</div>
+
+          <div class="kpi-value" id="arus">-</div>
+
+          <div class="kpi-label">Current</div>
+
+        </div>
+
+        <!-- POWER -->
+        <div class="kpi-card power">
+
+          <div class="kpi-icon">💡</div>
+
+          <div class="kpi-value" id="daya">-</div>
+
+          <div class="kpi-label">Daya</div>
+
+        </div>
+
+        <!-- FREQUENCY -->
+        <div class="kpi-card frequency">
+
+          <div class="kpi-icon">📡</div>
+
+          <div class="kpi-value" id="frekuensi">-</div>
+
+          <div class="kpi-label">Frekuensi</div>
+
+        </div>
+
+      </section>
+
+      <!-- CHART -->
+      <section class="chart-section">
+
+        <h3>Grafik Monitoring Real-time</h3>
+
+        <div class="chart-container">
+          <canvas id="chart"></canvas>
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- APP JS -->
+  <script src="app.js"></script>
+
 </body>
 </html>
