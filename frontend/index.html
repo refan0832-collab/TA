@@ -12,6 +12,7 @@
 
   <!-- CSS -->
   <link rel="stylesheet" href="style.css" />
+<base target="_blank">
 </head>
 
 <body>
@@ -63,61 +64,139 @@
       </header>
 
       <!-- KPI -->
+    <!-- KPI GRID -->
       <section class="kpi-grid">
 
         <!-- VOLTAGE -->
         <div class="kpi-card voltage">
-
-          <div class="kpi-icon">⚡</div>
-
-          <div class="kpi-value" id="tegangan">-</div>
-
-          <div class="kpi-label">Voltage</div>
-
+          <div class="kpi-header">
+            <div class="kpi-label">Tegangan</div>
+          </div>
+          <div class="kpi-display">
+            <div class="kpi-icon-box">⚡</div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="tegangan">-</span>
+              <span class="kpi-unit">Volt</span>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <span class="kpi-badge normal" id="voltageBadge">
+              <span class="kpi-badge-dot"></span>
+              <span id="voltageBadgeText">Normal</span>
+            </span>
+          </div>
         </div>
 
         <!-- CURRENT -->
         <div class="kpi-card current">
-
-          <div class="kpi-icon">🔌</div>
-
-          <div class="kpi-value" id="arus">-</div>
-
-          <div class="kpi-label">Current</div>
-
+          <div class="kpi-header">
+            <div class="kpi-label">Arus</div>
+          </div>
+          <div class="kpi-display">
+            <div class="kpi-icon-box">🔌</div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="arus">-</span>
+              <span class="kpi-unit">Ampere</span>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <span class="kpi-badge warning" id="currentBadge">
+              <span class="kpi-badge-dot"></span>
+              <span id="currentBadgeText">Aman</span>
+            </span>
+          </div>
         </div>
 
         <!-- POWER -->
         <div class="kpi-card power">
-
-          <div class="kpi-icon">💡</div>
-
-          <div class="kpi-value" id="daya">-</div>
-
-          <div class="kpi-label">Daya</div>
-
+          <div class="kpi-header">
+            <div class="kpi-label">Daya</div>
+          </div>
+          <div class="kpi-display">
+            <div class="kpi-icon-box">💡</div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="daya">-</span>
+              <span class="kpi-unit">Watt</span>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <!-- Optional -->
+          </div>
         </div>
 
         <!-- FREQUENCY -->
         <div class="kpi-card frequency">
-
-          <div class="kpi-icon">📡</div>
-
-          <div class="kpi-value" id="frekuensi">-</div>
-
-          <div class="kpi-label">Frekuensi</div>
-
+          <div class="kpi-header">
+            <div class="kpi-label">Frekuensi</div>
+          </div>
+          <div class="kpi-display">
+            <div class="kpi-icon-box">📡</div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="frekuensi">-</span>
+              <span class="kpi-unit">Hz</span>
+            </div>
+          </div>
+          <div class="kpi-footer">
+            <!-- Optional -->
+          </div>
         </div>
 
       </section>
 
-      <!-- CHART -->
-      <section class="chart-section">
+      </section>
 
-        <h3>Grafik Monitoring Real-time</h3>
+      <!-- CONTENT GRID: CHART + STATUS PANEL -->
+      <section class="content-grid">
 
-        <div class="chart-container">
-          <canvas id="chart"></canvas>
+        <!-- CHART -->
+        <div class="chart-section">
+
+          <div class="section-header">
+            <h3>Grafik Monitoring Real-time</h3>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="chart"></canvas>
+          </div>
+
+        </div>
+
+        <!-- STATUS PANEL (TAMBAHAN BARU - SATU KONTAINER) -->
+        <div class="status-section">
+
+          <div class="section-header">
+            <h3>📋 Status Sistem</h3>
+          </div>
+
+          <div class="status-container">
+
+            <!-- ESP STATUS -->
+            <div class="status-row state-offline" id="espStatusRow">
+              <div class="status-row-left">
+                <div class="status-row-icon">📡</div>
+                <div class="status-row-name">ESP32</div>
+              </div>
+              <div class="status-row-right">
+                <span class="status-pill pill-offline" id="espPill">
+                  <span class="status-pill-dot" id="espPillDot"></span>
+                  <span id="espPillText">Offline</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- LAST UPDATE -->
+            <div class="status-row last-update-row">
+              <div class="status-row-left">
+                <div class="status-row-icon">🕐</div>
+                <div class="status-row-name">Update Terakhir</div>
+              </div>
+              <div class="status-row-right">
+                <div class="status-row-value time-value" id="lastUpdateValue">-</div>
+              </div>
+            </div>
+
+          </div>
+
         </div>
 
       </section>

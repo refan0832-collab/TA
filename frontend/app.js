@@ -4,15 +4,60 @@
 // ===============================
 
 class PowerMonitor {
+    // Tambahkan method baru di class PowerMonitor
+updateKpiBadges(d) {
+  // Voltage badge
+  const vBadge = document.getElementById('voltageBadge');
+  const vText  = document.getElementById('voltageBadgeText');
+  if (vBadge && vText) {
+    if (!this.isConnected || !d) {
+      vBadge.className = 'kpi-badge unknown';
+      vText.textContent = '-';
+    } else if (d.voltage >= 210 && d.voltage <= 240) {
+      vBadge.className = 'kpi-badge normal';
+      vText.textContent = 'Normal';
+    } else if (d.voltage > 0) {
+      vBadge.className = 'kpi-badge warning';
+      vText.textContent = 'Warning';
+    } else {
+      vBadge.className = 'kpi-badge warning';
+      vText.textContent = 'Error';
+    }
+  }
+
+  // Current badge
+  const cBadge = document.getElementById('currentBadge');
+  const cText  = document.getElementById('currentBadgeText');
+  if (cBadge && cText) {
+    if (!this.isConnected || !d) {
+      cBadge.className = 'kpi-badge unknown';
+      cText.textContent = '-';
+    } else if (d.current > this.currentThreshold) {
+      cBadge.className = 'kpi-badge warning';
+      cText.textContent = 'Warning';
+    } else if (d.current >= 0) {
+      cBadge.className = 'kpi-badge normal';
+      cText.textContent = 'Normal';
+    } else {
+      cBadge.className = 'kpi-badge warning';
+      cText.textContent = 'Error';
+    }
+  }
+}
 
   constructor() {
 
     this.API_URL =
       "http://localhost:5000/api/current";
 
+    this.ESP_STATUS_URL =
+      "http://localhost:5000/api/esp-status";
+
     this.currentThreshold = 4.0;
 
     this.isConnected = false;
+
+    this.isEspOnline = false;
 
     this.initChart();
 
@@ -160,25 +205,43 @@ class PowerMonitor {
           "pm_token"
         );
 
-      const res =
-        await fetch(this.API_URL, {
+      const headers = {};
+      if (token) {
+        headers["Authorization"] = "Bearer " + token;
+      }
 
-          headers: token
-            ? {
-                Authorization:
-                  "Bearer " + token
-              }
-            : {}
-        });
+      // Fetch data + ESP status secara parallel
+      const [dataRes, espRes] =
+        await Promise.all([
+          fetch(this.API_URL, { headers })
+            .catch(err => {
+              console.warn("[Fetch] Data error:", err.message);
+              return null;
+            }),
+          fetch(this.ESP_STATUS_URL, { headers })
+            .catch(err => {
+              console.warn("[Fetch] ESP status error:", err.message);
+              return null;
+            })
+        ]);
 
-      if (!res.ok) {
+      if (!dataRes || !dataRes.ok) {
         throw new Error(
-          "Server Error"
+          "Data fetch failed"
         );
       }
 
-      const data =
-        await res.json();
+      const data = await dataRes.json();
+
+      // Cek status ESP dari endpoint baru
+      if (espRes && espRes.ok) {
+        const espStatus = await espRes.json();
+        this.isEspOnline = espStatus.esp_online === true;
+        console.log("[ESP] Status:", espStatus);
+      } else {
+        this.isEspOnline = false;
+        console.log("[ESP] No response from server, espRes:", espRes);
+      }
 
       this.isConnected = true;
 
@@ -216,11 +279,13 @@ class PowerMonitor {
     } catch (err) {
 
       console.warn(
-        "Backend Offline:",
-        err
+        "[Backend] Offline:",
+        err.message
       );
 
       this.isConnected = false;
+
+      this.isEspOnline = false;
 
       return null;
     }
@@ -230,7 +295,7 @@ class PowerMonitor {
   // UPDATE UI
   // ===============================
   updateUI(d) {
-
+    
     // OFFLINE
     if (!this.isConnected || !d) {
 
@@ -372,6 +437,46 @@ class PowerMonitor {
   }
 
   // ===============================
+  // STATUS PANEL UPDATE (TAMBAHAN BARU - SATU KONTAINER)
+  // ===============================
+  updateStatusPanel(d) {
+    // Guard: only run on dashboard page (elements exist)
+    if (!document.getElementById("espStatusRow")) return;
+
+    const now = new Date();
+    const timeString = now.toLocaleTimeString("id-ID");
+
+    // ESP32 Status Row (berdasarkan MQTT, bukan HTTP)
+    const espRow = document.getElementById("espStatusRow");
+    const espPill = document.getElementById("espPill");
+    const espPillText = document.getElementById("espPillText");
+
+    if (espRow && espPill && espPillText) {
+      if (this.isEspOnline) {
+        espRow.className = "status-row state-online";
+        espPill.className = "status-pill pill-online";
+        espPillText.textContent = "Online";
+      } else {
+        espRow.className = "status-row state-offline";
+        espPill.className = "status-pill pill-offline";
+        espPillText.textContent = "Offline";
+      }
+    }
+
+    // Last Update Row
+    const lastUpdateValue = document.getElementById("lastUpdateValue");
+    if (lastUpdateValue) {
+      if (this.isConnected && d) {
+        lastUpdateValue.textContent = timeString;
+        lastUpdateValue.style.color = "#e2e8f0";
+      } else {
+        lastUpdateValue.textContent = "-";
+        lastUpdateValue.style.color = "rgba(148, 163, 184, 0.5)";
+      }
+    }
+  }
+
+  // ===============================
   // LOOP
   // ===============================
   async loop() {
@@ -382,6 +487,9 @@ class PowerMonitor {
     this.updateUI(d);
 
     this.updateChart(d);
+
+    this.updateStatusPanel(d);
+      this.updateKpiBadges(d);  // ← tambahkan ini
   }
 
   // ===============================
