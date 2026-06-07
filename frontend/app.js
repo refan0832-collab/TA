@@ -1,64 +1,30 @@
 // ===============================
 // ESP32 POWER MONITOR FINAL
-// SESSION LOGIN VERSION
 // ===============================
 
 class PowerMonitor {
-    // Tambahkan method baru di class PowerMonitor
-updateKpiBadges(d) {
-  // Voltage badge
-  const vBadge = document.getElementById('voltageBadge');
-  const vText  = document.getElementById('voltageBadgeText');
-  if (vBadge && vText) {
-    if (!this.isConnected || !d) {
-      vBadge.className = 'kpi-badge unknown';
-      vText.textContent = '-';
-    } else if (d.voltage >= 210 && d.voltage <= 240) {
-      vBadge.className = 'kpi-badge normal';
-      vText.textContent = 'Normal';
-    } else if (d.voltage > 0) {
-      vBadge.className = 'kpi-badge warning';
-      vText.textContent = 'Warning';
-    } else {
-      vBadge.className = 'kpi-badge warning';
-      vText.textContent = 'Error';
-    }
-  }
-
-  // Current badge
-  const cBadge = document.getElementById('currentBadge');
-  const cText  = document.getElementById('currentBadgeText');
-  if (cBadge && cText) {
-    if (!this.isConnected || !d) {
-      cBadge.className = 'kpi-badge unknown';
-      cText.textContent = '-';
-    } else if (d.current > this.currentThreshold) {
-      cBadge.className = 'kpi-badge warning';
-      cText.textContent = 'Warning';
-    } else if (d.current >= 0) {
-      cBadge.className = 'kpi-badge normal';
-      cText.textContent = 'Normal';
-    } else {
-      cBadge.className = 'kpi-badge warning';
-      cText.textContent = 'Error';
-    }
-  }
-}
 
   constructor() {
 
+    // API
     this.API_URL =
-      "http://localhost:5000/api/current";
+      "/api/current";
 
     this.ESP_STATUS_URL =
-      "http://localhost:5000/api/esp-status";
+      "/api/esp-status";
 
-    this.currentThreshold = 4.0;
+    // LIMIT
+    this.currentThreshold =
+      4.0;
 
+    // STATUS
     this.isConnected = false;
-
     this.isEspOnline = false;
 
+    // CHART
+    this.chart = null;
+
+    // INIT
     this.initChart();
 
     this.emptyState();
@@ -69,32 +35,42 @@ updateKpiBadges(d) {
   // ===============================
   // EMPTY STATE
   // ===============================
+
   emptyState() {
 
-    document.getElementById(
-      "tegangan"
-    ).textContent = "-";
+    const ids = [
 
-    document.getElementById(
-      "arus"
-    ).textContent = "-";
+      "tegangan",
+      "arus",
+      "daya",
+      "frekuensi",
+      "pf"
+    ];
 
-    document.getElementById(
-      "daya"
-    ).textContent = "-";
+    ids.forEach(id => {
 
-    document.getElementById(
-      "frekuensi"
-    ).textContent = "-";
+      const el =
+        document.getElementById(id);
+
+      if (el) {
+
+        el.textContent = "-";
+      }
+    });
   }
 
   // ===============================
-  // CHART
+  // INIT CHART
   // ===============================
+
   initChart() {
 
     const ctx =
-      document.getElementById("chart");
+      document.getElementById(
+        "chart"
+      );
+
+    if (!ctx) return;
 
     this.data = {
 
@@ -103,46 +79,52 @@ updateKpiBadges(d) {
       datasets: [
 
         {
-          label: "Tegangan (V)",
+          label:
+            "Tegangan (V)",
 
           data: [],
 
-          borderColor: "#3b82f6",
+          borderColor:
+            "#3b82f6",
 
           backgroundColor:
-            "rgba(59,130,246,0.2)",
+            "rgba(59,130,246,0.15)",
 
-          tension: 0.3,
+          tension: 0.35,
 
           fill: true
         },
 
         {
-          label: "Arus (A)",
+          label:
+            "Arus (A)",
 
           data: [],
 
-          borderColor: "#22c55e",
+          borderColor:
+            "#22c55e",
 
           backgroundColor:
-            "rgba(34,197,94,0.2)",
+            "rgba(34,197,94,0.15)",
 
-          tension: 0.3,
+          tension: 0.35,
 
           fill: false
         },
 
         {
-          label: "Daya (W)",
+          label:
+            "Daya (W)",
 
           data: [],
 
-          borderColor: "#f97316",
+          borderColor:
+            "#f97316",
 
           backgroundColor:
-            "rgba(249,115,22,0.2)",
+            "rgba(249,115,22,0.15)",
 
-          tension: 0.3,
+          tension: 0.35,
 
           fill: true
         }
@@ -168,7 +150,8 @@ updateKpiBadges(d) {
           legend: {
 
             labels: {
-              color: "white"
+
+              color: "#fff"
             }
           }
         },
@@ -178,14 +161,28 @@ updateKpiBadges(d) {
           x: {
 
             ticks: {
-              color: "white"
+
+              color: "#cbd5e1"
+            },
+
+            grid: {
+
+              color:
+                "rgba(255,255,255,0.05)"
             }
           },
 
           y: {
 
             ticks: {
-              color: "white"
+
+              color: "#cbd5e1"
+            },
+
+            grid: {
+
+              color:
+                "rgba(255,255,255,0.05)"
             }
           }
         }
@@ -196,51 +193,54 @@ updateKpiBadges(d) {
   // ===============================
   // FETCH DATA
   // ===============================
+
   async fetchData() {
 
     try {
 
-      const token =
-        sessionStorage.getItem(
-          "pm_token"
+      // =========================
+      // FETCH CURRENT DATA
+      // =========================
+
+      const dataRes =
+        await fetch(
+          this.API_URL
         );
 
-      const headers = {};
-      if (token) {
-        headers["Authorization"] = "Bearer " + token;
-      }
+      // =========================
+      // FETCH ESP STATUS
+      // =========================
 
-      // Fetch data + ESP status secara parallel
-      const [dataRes, espRes] =
-        await Promise.all([
-          fetch(this.API_URL, { headers })
-            .catch(err => {
-              console.warn("[Fetch] Data error:", err.message);
-              return null;
-            }),
-          fetch(this.ESP_STATUS_URL, { headers })
-            .catch(err => {
-              console.warn("[Fetch] ESP status error:", err.message);
-              return null;
-            })
-        ]);
+      const espRes =
+        await fetch(
+          this.ESP_STATUS_URL
+        );
 
-      if (!dataRes || !dataRes.ok) {
+      if (!dataRes.ok) {
+
         throw new Error(
-          "Data fetch failed"
+          "Backend Error"
         );
       }
 
-      const data = await dataRes.json();
+      const data =
+        await dataRes.json();
 
-      // Cek status ESP dari endpoint baru
-      if (espRes && espRes.ok) {
-        const espStatus = await espRes.json();
-        this.isEspOnline = espStatus.esp_online === true;
-        console.log("[ESP] Status:", espStatus);
+      // =========================
+      // ESP STATUS
+      // =========================
+
+      if (espRes.ok) {
+
+        const esp =
+          await espRes.json();
+
+        this.isEspOnline =
+          esp.esp_online === true;
+
       } else {
+
         this.isEspOnline = false;
-        console.log("[ESP] No response from server, espRes:", espRes);
       }
 
       this.isConnected = true;
@@ -249,37 +249,34 @@ updateKpiBadges(d) {
 
         voltage:
           Number(
-            data.tegangan ??
-            data.voltage ??
-            0
+            data.tegangan || 0
           ),
 
         current:
           Number(
-            data.arus ??
-            data.current ??
-            0
+            data.arus || 0
           ),
 
         power:
           Number(
-            data.daya ??
-            data.power ??
-            0
+            data.daya || 0
           ),
 
         frequency:
           Number(
-            data.frekuensi ??
-            data.frequency ??
-            0
+            data.frekuensi || 0
+          ),
+
+        pf:
+          Number(
+            data.pf || 0
           )
       };
 
     } catch (err) {
 
       console.warn(
-        "[Backend] Offline:",
+        "[Backend Offline]",
         err.message
       );
 
@@ -292,69 +289,211 @@ updateKpiBadges(d) {
   }
 
   // ===============================
+  // KPI BADGE
+  // ===============================
+
+  updateKpiBadges(d) {
+
+    // =========================
+    // VOLTAGE
+    // =========================
+
+    const vBadge =
+      document.getElementById(
+        "voltageBadge"
+      );
+
+    const vText =
+      document.getElementById(
+        "voltageBadgeText"
+      );
+
+    if (vBadge && vText) {
+
+      if (!d) {
+
+        vBadge.className =
+          "kpi-badge unknown";
+
+        vText.textContent = "-";
+
+      } else if (
+
+        d.voltage >= 210 &&
+        d.voltage <= 240
+
+      ) {
+
+        vBadge.className =
+          "kpi-badge normal";
+
+        vText.textContent =
+          "Normal";
+
+      } else {
+
+        vBadge.className =
+          "kpi-badge warning";
+
+        vText.textContent =
+          "Warning";
+      }
+    }
+
+    // =========================
+    // CURRENT
+    // =========================
+
+    const cBadge =
+      document.getElementById(
+        "currentBadge"
+      );
+
+    const cText =
+      document.getElementById(
+        "currentBadgeText"
+      );
+
+    if (cBadge && cText) {
+
+      if (!d) {
+
+        cBadge.className =
+          "kpi-badge unknown";
+
+        cText.textContent = "-";
+
+      } else if (
+
+        d.current >
+        this.currentThreshold
+
+      ) {
+
+        cBadge.className =
+          "kpi-badge warning";
+
+        cText.textContent =
+          "Warning";
+
+      } else {
+
+        cBadge.className =
+          "kpi-badge normal";
+
+        cText.textContent =
+          "Normal";
+      }
+    }
+  }
+
+  // ===============================
   // UPDATE UI
   // ===============================
+
   updateUI(d) {
-    
-    // OFFLINE
-    if (!this.isConnected || !d) {
+
+    if (!d) {
 
       this.emptyState();
 
-      // RESET CHART
-      this.data.labels = [];
-
-      this.data.datasets.forEach(ds => {
-        ds.data = [];
-      });
-
-      this.chart.update();
-
+      return;
     }
 
-    // ONLINE
-    else {
+    const tegangan =
+      Number(d.voltage || 0);
 
+    const arus =
+      Number(d.current || 0);
+
+    const daya =
+      Number(d.power || 0);
+
+    const frekuensi =
+      Number(d.frequency || 0);
+
+    const pf =
+      Number(d.pf || 0);
+
+    // =========================
+    // KPI VALUE
+    // =========================
+
+    document.getElementById(
+      "tegangan"
+    ).textContent =
+      tegangan.toFixed(1);
+
+    document.getElementById(
+      "arus"
+    ).textContent =
+      arus.toFixed(2);
+
+    document.getElementById(
+      "daya"
+    ).textContent =
+      daya.toFixed(1);
+
+    document.getElementById(
+      "frekuensi"
+    ).textContent =
+      frekuensi.toFixed(1);
+
+    document.getElementById(
+      "pf"
+    ).textContent =
+      pf.toFixed(2);
+
+    // =========================
+    // STATUS
+    // =========================
+
+    const status =
       document.getElementById(
-        "tegangan"
-      ).textContent =
-        d.voltage;
+        "connectionStatus"
+      );
 
+    if (status) {
+
+      status.textContent =
+        this.isConnected
+          ? "● Online"
+          : "● Offline";
+
+      status.style.color =
+        this.isConnected
+          ? "#22c55e"
+          : "#ef4444";
+    }
+
+    // =========================
+    // WARNING AMPERE
+    // =========================
+
+    const arusEl =
       document.getElementById(
         "arus"
-      ).textContent =
-        d.current;
+      );
 
-      document.getElementById(
-        "daya"
-      ).textContent =
-        d.power;
-
-      document.getElementById(
-        "frekuensi"
-      ).textContent =
-        d.frequency;
-    }
-
-    // WARNING AMPERE
-    const arusEl =
-      document.getElementById("arus");
+    if (!arusEl) return;
 
     const arusCard =
-      arusEl.closest(".kpi-card");
+      arusEl.closest(
+        ".kpi-card"
+      );
 
     if (
-      this.isConnected &&
-      d &&
-      d.current >
-        this.currentThreshold
+
+      arus >
+      this.currentThreshold
+
     ) {
 
       arusEl.classList.add(
         "blink-red"
       );
 
-      arusCard.classList.add(
+      arusCard?.classList.add(
         "warning-card"
       );
 
@@ -364,121 +503,109 @@ updateKpiBadges(d) {
         "blink-red"
       );
 
-      arusCard.classList.remove(
+      arusCard?.classList.remove(
         "warning-card"
       );
-    }
-
-    // STATUS
-    const status =
-      document.getElementById(
-        "connectionStatus"
-      );
-
-    if (status) {
-
-      if (this.isConnected) {
-
-        status.textContent =
-          "● Online";
-
-        status.style.color =
-          "#22c55e";
-
-      } else {
-
-        status.textContent =
-          "● Offline";
-
-        status.style.color =
-          "#ef4444";
-      }
     }
   }
 
   // ===============================
   // UPDATE CHART
   // ===============================
+
   updateChart(d) {
 
-    if (
-      !this.isConnected ||
-      !d
-    ) return;
+    if (!this.chart || !d)
+      return;
 
     const time =
       new Date()
-      .toLocaleTimeString("id-ID");
+      .toLocaleTimeString(
+        "id-ID"
+      );
 
-    this.data.labels.push(time);
+    this.data.labels.push(
+      time
+    );
 
     this.data.datasets[0]
-      .data.push(d.voltage);
+      .data.push(
+        d.voltage
+      );
 
     this.data.datasets[1]
-      .data.push(d.current);
+      .data.push(
+        d.current
+      );
 
     this.data.datasets[2]
-      .data.push(d.power);
+      .data.push(
+        d.power
+      );
 
-    // LIMIT DATA
+    // LIMIT
     if (
-      this.data.labels.length > 20
+
+      this.data.labels.length >
+      20
+
     ) {
 
       this.data.labels.shift();
 
-      this.data.datasets.forEach(ds => {
-        ds.data.shift();
-      });
+      this.data.datasets
+        .forEach(ds => {
+
+          ds.data.shift();
+        });
     }
 
     this.chart.update();
   }
 
   // ===============================
-  // STATUS PANEL UPDATE (TAMBAHAN BARU - SATU KONTAINER)
+  // STATUS PANEL
   // ===============================
+
   updateStatusPanel(d) {
-    // Guard: only run on dashboard page (elements exist)
-    if (!document.getElementById("espStatusRow")) return;
 
-    const now = new Date();
-    const timeString = now.toLocaleTimeString("id-ID");
+    const espPillText =
+      document.getElementById(
+        "espPillText"
+      );
 
-    // ESP32 Status Row (berdasarkan MQTT, bukan HTTP)
-    const espRow = document.getElementById("espStatusRow");
-    const espPill = document.getElementById("espPill");
-    const espPillText = document.getElementById("espPillText");
+    if (espPillText) {
 
-    if (espRow && espPill && espPillText) {
-      if (this.isEspOnline) {
-        espRow.className = "status-row state-online";
-        espPill.className = "status-pill pill-online";
-        espPillText.textContent = "Online";
-      } else {
-        espRow.className = "status-row state-offline";
-        espPill.className = "status-pill pill-offline";
-        espPillText.textContent = "Offline";
-      }
+      espPillText.textContent =
+        this.isEspOnline
+          ? "Online"
+          : "Offline";
     }
 
-    // Last Update Row
-    const lastUpdateValue = document.getElementById("lastUpdateValue");
-    if (lastUpdateValue) {
-      if (this.isConnected && d) {
-        lastUpdateValue.textContent = timeString;
-        lastUpdateValue.style.color = "#e2e8f0";
-      } else {
-        lastUpdateValue.textContent = "-";
-        lastUpdateValue.style.color = "rgba(148, 163, 184, 0.5)";
-      }
+    const lastUpdate =
+      document.getElementById(
+        "lastUpdateValue"
+      );
+
+    if (lastUpdate) {
+
+      lastUpdate.textContent =
+
+        d
+
+        ? new Date()
+            .toLocaleTimeString(
+              "id-ID"
+            )
+
+        : "-";
     }
   }
 
   // ===============================
   // LOOP
   // ===============================
+
   async loop() {
 
     const d =
@@ -489,12 +616,14 @@ updateKpiBadges(d) {
     this.updateChart(d);
 
     this.updateStatusPanel(d);
-      this.updateKpiBadges(d);  // ← tambahkan ini
+
+    this.updateKpiBadges(d);
   }
 
   // ===============================
   // START
   // ===============================
+
   start() {
 
     this.loop();
@@ -507,523 +636,16 @@ updateKpiBadges(d) {
   }
 }
 
-
 // ===============================
-// LOGIN MANAGER
-// ===============================
-
-class LoginManager {
-
-  constructor() {
-
-    this.API_URL =
-      "http://localhost:5000/api/auth/login";
-
-    this.btnLogin =
-      document.getElementById(
-        "loginBtn"
-      );
-
-    this.inputUser =
-      document.getElementById(
-        "loginUsername"
-      );
-
-    this.inputPass =
-      document.getElementById(
-        "loginPassword"
-      );
-
-    this.alertEl =
-      document.getElementById(
-        "loginAlert"
-      );
-
-    this.togglePass =
-      document.getElementById(
-        "togglePass"
-      );
-
-    this.bindEvents();
-  }
-
-  // ===============================
-  // EVENTS
-  // ===============================
-  bindEvents() {
-
-    this.btnLogin.addEventListener(
-      "click",
-      () => this.doLogin()
-    );
-
-    [
-      this.inputUser,
-      this.inputPass
-    ].forEach(el => {
-
-      el.addEventListener(
-        "keydown",
-        e => {
-
-          if (e.key === "Enter") {
-            this.doLogin();
-          }
-        }
-      );
-    });
-
-    // TOGGLE PASSWORD
-    if (this.togglePass) {
-
-      this.togglePass.addEventListener(
-        "click",
-        () => {
-
-          const isPass =
-            this.inputPass.type ===
-            "password";
-
-          this.inputPass.type =
-            isPass
-              ? "text"
-              : "password";
-
-          this.togglePass.textContent =
-            isPass
-              ? "🙈"
-              : "👁";
-        }
-      );
-    }
-  }
-
-  // ===============================
-  // ALERT
-  // ===============================
-  showAlert(
-    msg,
-    type = "error"
-  ) {
-
-    this.alertEl.textContent =
-      msg;
-
-    this.alertEl.className =
-      `login-alert ${type}`;
-
-    this.alertEl.style.display =
-      "block";
-  }
-
-  hideAlert() {
-
-    this.alertEl.style.display =
-      "none";
-  }
-
-  // ===============================
-  // LOADING
-  // ===============================
-  setLoading(on) {
-
-    const btnText =
-      this.btnLogin.querySelector(
-        ".btn-text"
-      );
-
-    const btnLoader =
-      this.btnLogin.querySelector(
-        ".btn-loader"
-      );
-
-    this.btnLogin.disabled =
-      on;
-
-    btnText.style.display =
-      on ? "none" : "inline";
-
-    btnLoader.style.display =
-      on ? "inline" : "none";
-  }
-
-  // ===============================
-  // LOGIN
-  // ===============================
-  async doLogin() {
-
-    const username =
-      this.inputUser.value.trim();
-
-    const password =
-      this.inputPass.value.trim();
-
-    this.hideAlert();
-
-    if (
-      !username ||
-      !password
-    ) {
-
-      this.showAlert(
-        "⚠ Username dan password wajib diisi."
-      );
-
-      return;
-    }
-
-    this.setLoading(true);
-
-    try {
-
-      const res =
-        await fetch(
-          this.API_URL,
-          {
-
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json"
-            },
-
-            body: JSON.stringify({
-              username,
-              password
-            })
-          }
-        );
-
-      const data =
-        await res.json();
-
-      if (
-        res.ok &&
-        data.token
-      ) {
-
-        // SESSION STORAGE
-        sessionStorage.setItem(
-          "pm_token",
-          data.token
-        );
-
-        sessionStorage.setItem(
-          "pm_user",
-          JSON.stringify({
-
-            username:
-              data.username,
-
-            role:
-              data.role
-          })
-        );
-
-        this.showAlert(
-          "✅ Login berhasil!",
-          "success"
-        );
-
-        setTimeout(() => {
-
-          window.location.href =
-            "index.html";
-
-        }, 1000);
-
-      } else {
-
-        this.showAlert(
-          data.error ||
-          "❌ Login gagal."
-        );
-      }
-
-    } catch (err) {
-
-      console.error(err);
-
-      this.showAlert(
-        "❌ Backend tidak dapat dihubungi."
-      );
-
-    } finally {
-
-      this.setLoading(false);
-    }
-  }
-}
-
-
-// ===============================
-// AUTH GUARD
-// ===============================
-function authGuard() {
-
-  const token =
-    sessionStorage.getItem(
-      "pm_token"
-    );
-
-  if (!token) {
-
-    window.location.href =
-      "login.html";
-
-    return false;
-  }
-
-  return true;
-}
-
-
-// ===============================
-// LOGOUT
-// ===============================
-function doLogout() {
-
-  sessionStorage.removeItem(
-    "pm_token"
-  );
-
-  sessionStorage.removeItem(
-    "pm_user"
-  );
-
-  window.location.href =
-    "login.html";
-}
-
-
-// ===============================
-// HEADER
-// ===============================
-function injectLogoutButton() {
-
-  const header =
-    document.querySelector(
-      ".header"
-    );
-
-  if (!header) return;
-
-  const userRaw =
-    sessionStorage.getItem(
-      "pm_user"
-    );
-
-  const userInfo =
-    userRaw
-      ? JSON.parse(userRaw)
-      : null;
-
-  const right =
-    document.createElement("div");
-
-  right.style.display = "flex";
-
-  right.style.alignItems =
-    "center";
-
-  right.style.gap = "1rem";
-
-  // USER
-  if (userInfo) {
-
-    const userBadge =
-      document.createElement(
-        "span"
-      );
-
-    userBadge.textContent =
-      `👤 ${userInfo.username} (${userInfo.role})`;
-
-    userBadge.style.fontSize =
-      "0.9rem";
-
-    right.appendChild(
-      userBadge
-    );
-  }
-
-  // STATUS
-  const status =
-    document.getElementById(
-      "connectionStatus"
-    );
-
-  if (status) {
-    right.appendChild(status);
-  }
-
-  // LOGOUT BUTTON
-  const btn =
-    document.createElement(
-      "button"
-    );
-
-  btn.textContent =
-    "🚪 Logout";
-
-  btn.className =
-    "logout-btn";
-
-  btn.addEventListener(
-    "click",
-    doLogout
-  );
-
-  right.appendChild(btn);
-
-  header.appendChild(right);
-}
-
-
-// ===============================
-// SIDEBAR TOGGLE
+// AUTO START
 // ===============================
 
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const toggle = document.getElementById('menuToggle');
-    
-    if (sidebar.classList.contains('open')) {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('active');
-        toggle.classList.remove('active');
-    } else {
-        sidebar.classList.add('open');
-        overlay.classList.add('active');
-        toggle.classList.add('active');
-    }
-}
-
-// Tutup sidebar saat klik overlay atau di luar
-document.addEventListener('click', function(e) {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const toggle = document.getElementById('menuToggle');
-    
-    if (!sidebar || !toggle) return;
-    
-    if (e.target === overlay) {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('active');
-        toggle.classList.remove('active');
-        return;
-    }
-    
-    if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
-        if (sidebar.classList.contains('open')) {
-            sidebar.classList.remove('open');
-            overlay.classList.remove('active');
-            toggle.classList.remove('active');
-        }
-    }
-});
-
-// Handle resize window
-window.addEventListener('resize', function() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    const toggle = document.getElementById('menuToggle');
-    
-    if (!sidebar || !toggle) return;
-    
-    sidebar.classList.remove('open');
-    overlay.classList.remove('active');
-    toggle.classList.remove('active');
-});
-
-
-// ===============================
-// CLOCK / WAKTU REAL-TIME (tambahan baru)
-// ===============================
-
-function updateClock() {
-    const now = new Date();
-    
-    // Format waktu: 14:30:45
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const timeString = `${hours}:${minutes}:${seconds}`;
-    
-    // Format tanggal: Senin, 9 Mei 2026
-    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
-                    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    
-    const dayName = days[now.getDay()];
-    const date = now.getDate();
-    const month = months[now.getMonth()];
-    const year = now.getFullYear();
-    const dateString = `${dayName}, ${date} ${month} ${year}`;
-    
-    // Update DOM
-    const clockTime = document.getElementById('clockTime');
-    const clockDate = document.getElementById('clockDate');
-    
-    if (clockTime) clockTime.textContent = timeString;
-    if (clockDate) clockDate.textContent = dateString;
-}
-
-// Jalankan segera dan update setiap detik
-updateClock();
-setInterval(updateClock, 1000);
-
-
-// ===============================
-// INIT APP
-// ===============================
 document.addEventListener(
+
   "DOMContentLoaded",
+
   () => {
 
-    const isLoginPage =
-      !!document.getElementById(
-        "loginBtn"
-      );
-
-    const isDashboard =
-      !!document.getElementById(
-        "chart"
-      );
-
-    // LOGIN PAGE
-    if (isLoginPage) {
-
-      if (
-        sessionStorage.getItem(
-          "pm_token"
-        )
-      ) {
-
-        window.location.href =
-          "index.html";
-
-        return;
-      }
-
-      new LoginManager();
-    }
-
-    // DASHBOARD
-    if (isDashboard) {
-
-      if (!authGuard()) return;
-
-      injectLogoutButton();
-
-      new PowerMonitor();
-    }
+    new PowerMonitor();
   }
 );
-
-
-// ===============================
-// AUTO LOGOUT WHEN TAB CLOSED
-// ===============================

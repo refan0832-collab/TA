@@ -1,89 +1,411 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title> PowerMonitor — Login</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
+  <title>
+    PowerMonitor Login
+  </title>
+
+  <!-- GOOGLE FONT -->
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap"
+    rel="stylesheet">
+
+  <!-- CSS -->
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}">
+
 </head>
+
 <body class="login-body">
 
-  <!-- Animated background grid -->
+  <!-- BACKGROUND -->
   <div class="login-bg">
+
     <div class="grid-lines"></div>
+
     <div class="orb orb-1"></div>
+
     <div class="orb orb-2"></div>
+
     <div class="orb orb-3"></div>
+
   </div>
 
+  <!-- LOGIN WRAPPER -->
   <div class="login-wrapper">
 
-    <!-- Brand -->
+    <!-- BRAND -->
     <div class="login-brand">
-      <div class="brand-icon">⚡</div>
-      <h1 class="brand-title">Power Monitor</h1>
-      <p class="brand-sub">Real-Time Energy Dashboard</p>
-    </div>
 
-    <!-- Card -->
-    <div class="login-card" id="loginCard">
-
-      <div class="login-card-header">
-        <h2>Masuk ke Sistem</h2>
-        <p>Silakan login untuk melanjutkan</p>
+      <div class="brand-icon">
+        ⚡
       </div>
 
-      <!-- Alert -->
-      <div class="login-alert" id="loginAlert" style="display:none;"></div>
+      <h1 class="brand-title">
+        Power Monitor
+      </h1>
 
-      <!-- Form -->
+      <p class="brand-sub">
+        Real-Time Energy Dashboard
+      </p>
+
+    </div>
+
+    <!-- LOGIN CARD -->
+    <div
+      class="login-card"
+      id="loginCard">
+
+      <div class="login-card-header">
+
+        <h2>
+          Masuk ke Sistem
+        </h2>
+
+        <p>
+          Silakan login untuk melanjutkan
+        </p>
+
+      </div>
+
+      <!-- ALERT -->
+      <div
+        class="login-alert"
+        id="loginAlert"
+        style="display:none;">
+      </div>
+
+      <!-- FORM -->
       <div class="login-form">
 
+        <!-- USERNAME -->
         <div class="form-group">
-          <label for="loginUsername">Username</label>
+
+          <label for="loginUsername">
+            Username
+          </label>
+
           <div class="input-wrap">
-            <span class="input-icon">👤</span>
+
+            <span class="input-icon">
+              👤
+            </span>
+
             <input
               type="text"
               id="loginUsername"
-              placeholder="Masukkan username"
-              autocomplete="username"
-            >
+              placeholder="Masukkan username">
+
           </div>
+
         </div>
 
+        <!-- PASSWORD -->
         <div class="form-group">
-          <label for="loginPassword">Password</label>
+
+          <label for="loginPassword">
+            Password
+          </label>
+
           <div class="input-wrap">
-            <span class="input-icon">🔒</span>
+
+            <span class="input-icon">
+              🔒
+            </span>
+
             <input
               type="password"
               id="loginPassword"
-              placeholder="Masukkan password"
-              autocomplete="current-password"
-            >
-            <button class="toggle-pass" type="button" id="togglePass" title="Tampilkan password">👁</button>
+              placeholder="Masukkan password">
+
+            <button
+              class="toggle-pass"
+              type="button"
+              id="togglePass">
+
+              👁
+
+            </button>
+
           </div>
+
         </div>
 
-        <button class="login-btn" id="loginBtn" type="button">
-          <span class="btn-text">Login</span>
-          <span class="btn-loader" style="display:none;">⏳</span>
+        <!-- BUTTON -->
+        <button
+          class="login-btn"
+          id="loginBtn"
+          type="button">
+
+          <span class="btn-text">
+            Login
+          </span>
+
+          <span
+            class="btn-loader"
+            style="display:none;">
+
+            ⏳
+
+          </span>
+
         </button>
 
       </div>
 
+      <!-- FOOTER -->
       <div class="login-footer">
-        <small>Default: <code>admin</code> / <code>admin123</code></small>
+
+        <small>
+
+          Default:
+          <code>admin</code>
+          /
+          <code>admin123</code>
+
+        </small>
+
       </div>
 
     </div>
 
-    <p class="login-copy">© 2025 PowerMonitor — ESP32 IoT System</p>
   </div>
 
-  <script src="app.js"></script>
+  <!-- DASHBOARD JS -->
+  <script
+    src="{{ url_for('static', filename='app.js') }}">
+  </script>
+
+  <!-- LOGIN SCRIPT -->
+  <script>
+
+    // =========================
+    // ELEMENT
+    // =========================
+
+    const loginBtn =
+      document.getElementById(
+        "loginBtn"
+      );
+
+    const togglePass =
+      document.getElementById(
+        "togglePass"
+      );
+
+    const passwordInput =
+      document.getElementById(
+        "loginPassword"
+      );
+
+    const alertBox =
+      document.getElementById(
+        "loginAlert"
+      );
+
+    // =========================
+    // ALERT
+    // =========================
+
+    function showAlert(message) {
+
+      alertBox.style.display =
+        "block";
+
+      alertBox.textContent =
+        message;
+    }
+
+    // =========================
+    // TOGGLE PASSWORD
+    // =========================
+
+    togglePass.addEventListener(
+      "click",
+
+      () => {
+
+        if (
+          passwordInput.type ===
+          "password"
+        ) {
+
+          passwordInput.type =
+            "text";
+
+          togglePass.textContent =
+            "🙈";
+
+        } else {
+
+          passwordInput.type =
+            "password";
+
+          togglePass.textContent =
+            "👁";
+        }
+      }
+    );
+
+    // =========================
+    // LOGIN FUNCTION
+    // =========================
+
+    async function login() {
+
+      const username =
+        document.getElementById(
+          "loginUsername"
+        ).value.trim();
+
+      const password =
+        document.getElementById(
+          "loginPassword"
+        ).value.trim();
+
+      // VALIDASI
+      if (!username || !password) {
+
+        showAlert(
+          "Username dan password wajib diisi"
+        );
+
+        return;
+      }
+
+      try {
+
+        // LOADING
+        loginBtn.disabled = true;
+
+        document.querySelector(
+          ".btn-text"
+        ).style.display = "none";
+
+        document.querySelector(
+          ".btn-loader"
+        ).style.display = "inline-block";
+
+        // REQUEST LOGIN
+        const response =
+          await fetch(
+            "/api/auth/login",
+            {
+
+              method: "POST",
+
+              headers: {
+
+                "Content-Type":
+                  "application/json"
+              },
+
+              body:
+                JSON.stringify({
+
+                  username,
+                  password
+                })
+            }
+          );
+
+        const data =
+          await response.json();
+
+        // LOGIN GAGAL
+        if (!response.ok) {
+
+          showAlert(
+            data.error ||
+            "Login gagal"
+          );
+
+          return;
+        }
+
+        // SAVE TOKEN
+        sessionStorage.setItem(
+          "pm_token",
+          data.token
+        );
+
+        sessionStorage.setItem(
+          "pm_user",
+          data.username
+        );
+
+        sessionStorage.setItem(
+          "pm_role",
+          data.role
+        );
+
+        // REDIRECT
+        window.location.href =
+          "/dashboard";
+
+      } catch (err) {
+
+        console.error(err);
+
+        showAlert(
+          "Server error"
+        );
+
+      } finally {
+
+        loginBtn.disabled = false;
+
+        document.querySelector(
+          ".btn-text"
+        ).style.display =
+          "inline-block";
+
+        document.querySelector(
+          ".btn-loader"
+        ).style.display =
+          "none";
+      }
+    }
+
+    // =========================
+    // BUTTON CLICK
+    // =========================
+
+    loginBtn.addEventListener(
+      "click",
+      login
+    );
+
+    // =========================
+    // ENTER KEY
+    // =========================
+
+    document.addEventListener(
+      "keydown",
+
+      (e) => {
+
+        if (e.key === "Enter") {
+
+          login();
+        }
+      }
+    );
+
+  </script>
+
 </body>
 </html>

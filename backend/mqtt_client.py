@@ -1,102 +1,292 @@
 import json
 import time
-from datetime import datetime
 import threading
+
+from datetime import datetime
+
 import paho.mqtt.client as mqtt
+
+# =========================
+# MQTT CONFIG
+# =========================
 
 MQTT_BROKER = "broker.hivemq.com"
 MQTT_PORT = 1883
-MQTT_TOPIC = "test/listrik/data"
 
-current_data = {}
+MQTT_TOPIC = "esp32/power_monitor"
+
+# =========================
+# STORAGE
+# =========================
+
+current_data = {
+
+    "tegangan": 0,
+    "arus": 0,
+    "daya": 0,
+    "frekuensi": 0,
+    "pf": 0,
+
+    "timestamp": None
+}
+
 history = []
+
 start_time = time.time()
-last_esp_timestamp = 0  # Waktu terakhir data dari ESP diterima via MQTT
 
-def on_connect(client, userdata, flags, rc):
+# WAKTU TERAKHIR DATA ESP
+last_esp_timestamp = 0
+
+# =========================
+# MQTT CONNECT
+# =========================
+
+def on_connect(
+    client,
+    userdata,
+    flags,
+    rc
+):
+
     if rc == 0:
-        print("✅ MQTT Connected")
-        client.subscribe(MQTT_TOPIC)
-    else:
-        print("❌ MQTT Failed:", rc)
 
-def on_message(client, userdata, msg):
-    global current_data, history, last_esp_timestamp
+        print("✅ MQTT Connected")
+
+        client.subscribe(
+            MQTT_TOPIC
+        )
+
+        print(
+            f"📡 Subscribe: {MQTT_TOPIC}"
+        )
+
+    else:
+
+        print(
+            "❌ MQTT Failed:",
+            rc
+        )
+
+# =========================
+# MQTT MESSAGE
+# =========================
+
+def on_message(
+    client,
+    userdata,
+    msg
+):
+
+    global current_data
+    global history
+    global last_esp_timestamp
 
     try:
-        payload = msg.payload.decode()
+
+        payload = \
+            msg.payload.decode()
+
         data = json.loads(payload)
 
-        # Mapping dari ESP32
+        # =========================
+        # MAPPING DATA
+        # =========================
+
         mapped = {
-            "voltage": data.get("tegangan"),
-            "current": data.get("arus"),
-            "power": data.get("daya"),
-            "frequency": data.get("frekuensi"),
-            "timestamp": datetime.now().isoformat()
+
+            "tegangan":
+                float(
+                    data.get(
+                        "tegangan",
+                        0
+                    )
+                ),
+
+            "arus":
+                float(
+                    data.get(
+                        "arus",
+                        0
+                    )
+                ),
+
+            "daya":
+                float(
+                    data.get(
+                        "daya",
+                        0
+                    )
+                ),
+
+            "frekuensi":
+                float(
+                    data.get(
+                        "frekuensi",
+                        0
+                    )
+                ),
+
+            # POWER FACTOR
+            "pf":
+                float(
+                    data.get(
+                        "pf",
+                        0
+                    )
+                ),
+
+            "timestamp":
+                datetime.now()
+                .isoformat()
         }
 
-        current_data = mapped
-        history.append(mapped)
-        last_esp_timestamp = time.time()  # Catat waktu terakhir data masuk
+        # =========================
+        # UPDATE STORAGE
+        # =========================
 
+        current_data = mapped
+
+        history.append(mapped)
+
+        last_esp_timestamp = \
+            time.time()
+
+        # LIMIT HISTORY
         if len(history) > 500:
+
             history.pop(0)
 
-        print("📥 Data MQTT:", mapped)
-        print("🕐 last_esp_timestamp updated:", datetime.fromtimestamp(last_esp_timestamp).strftime("%H:%M:%S"))
+        # =========================
+        # SERIAL LOG
+        # =========================
+
+        print()
+        print("================================")
+        print("📥 DATA MQTT")
+        print(mapped)
+
+        print(
+            "🕐 LAST UPDATE:",
+            datetime
+            .fromtimestamp(
+                last_esp_timestamp
+            )
+            .strftime("%H:%M:%S")
+        )
 
     except Exception as e:
-        print("❌ Error parsing:", e)
+
+        print()
+        print("================================")
+        print("❌ MQTT PARSE ERROR")
+        print(e)
+
+# =========================
+# START MQTT
+# =========================
 
 def start_mqtt():
+
     client = mqtt.Client()
+
     client.on_connect = on_connect
     client.on_message = on_message
 
-    client.connect(MQTT_BROKER, MQTT_PORT, 60)
+    print()
+    print("================================")
+    print("🚀 START MQTT")
+    print("BROKER :", MQTT_BROKER)
+    print("TOPIC  :", MQTT_TOPIC)
 
-    thread = threading.Thread(target=client.loop_forever)
+    client.connect(
+        MQTT_BROKER,
+        MQTT_PORT,
+        60
+    )
+
+    thread = threading.Thread(
+        target=client.loop_forever
+    )
+
     thread.daemon = True
+
     thread.start()
 
+# =========================
+# GET CURRENT DATA
+# =========================
+
 def get_current_data():
+
     return current_data
 
+# =========================
+# GET HISTORY
+# =========================
+
 def get_history(limit=100):
+
     return history[-limit:]
 
+# =========================
+# GET STATUS
+# =========================
+
 def get_status():
+
     return {
+
         "status": "online",
-        "uptime": int(time.time() - start_time),
-        "data_points": len(history)
+
+        "uptime":
+            int(
+                time.time() -
+                start_time
+            ),
+
+        "data_points":
+            len(history)
     }
 
+# =========================
+# GET ESP STATUS
+# =========================
+
 def get_esp_status():
-    """Cek apakah ESP32 online berdasarkan waktu terakhir data diterima"""
+
     global last_esp_timestamp
+
     now = time.time()
-    time_since_last = now - last_esp_timestamp
 
-    print(f"[ESP Status] last_esp_timestamp: {last_esp_timestamp}")
-    print(f"[ESP Status] now: {now}")
-    print(f"[ESP Status] time_since_last: {time_since_last}")
+    time_since_last = \
+        now - last_esp_timestamp
 
-    # Jika dalam 10 detik terakhir ada data = Online
-    if last_esp_timestamp > 0 and time_since_last < 10:
-        result = {
-            "esp_online": True,
-            "last_seen_seconds": int(time_since_last),
-            "last_seen": datetime.fromtimestamp(last_esp_timestamp).strftime("%H:%M:%S")
-        }
-        print(f"[ESP Status] Result: {result}")
-        return result
-    else:
-        result = {
-            "esp_online": False,
-            "last_seen_seconds": int(time_since_last) if last_esp_timestamp > 0 else None,
-            "last_seen": None
-        }
-        print(f"[ESP Status] Result: {result}")
-        return result
+    # ONLINE < 10 DETIK
+    esp_online = (
+        last_esp_timestamp > 0 and
+        time_since_last < 10
+    )
+
+    return {
+
+        "esp_online":
+            esp_online,
+
+        "last_seen_seconds":
+
+            int(time_since_last)
+
+            if last_esp_timestamp > 0
+            else None,
+
+        "last_seen":
+
+            datetime
+            .fromtimestamp(
+                last_esp_timestamp
+            )
+            .strftime("%H:%M:%S")
+
+            if last_esp_timestamp > 0
+            else None
+    }

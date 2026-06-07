@@ -1,45 +1,61 @@
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>⚡ PowerMonitor Dashboard</title>
-
-  <!-- CHART JS -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- CSS -->
-  <link rel="stylesheet" href="style.css" />
-<base target="_blank">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body>
 
-  <!-- TOGGLE BUTTON (tampil di semua ukuran layar) -->
-  <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
-    <span></span>
-    <span></span>
-    <span></span>
+  <!-- HAMBURGER -->
+  <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
   </button>
 
-  <!-- OVERLAY (gelap saat sidebar terbuka) -->
+  <!-- OVERLAY -->
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
   <div class="container" id="container">
 
-    <!-- SIDEBAR (tersembunyi default) -->
+    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-logo">⚡</span>
+        <span class="sidebar-title">PowerMonitor</span>
+      </div>
 
-      <h2>Menu</h2>
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="active">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Dashboard</span>
+          </li>
+          <li>
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">History</span>
+          </li>
+          <li>
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Settings</span>
+          </li>
+        </ul>
+      </nav>
 
-      <ul>
-        <li class="active">📊 Dashboard</li>
-        <li>📈 History</li>
-        <li>⚙️ Settings</li>
-      </ul>
-
+      <div class="sidebar-footer">
+        <div class="sidebar-user" id="sidebarUser">
+          <span class="sidebar-user-icon">👤</span>
+          <span class="sidebar-username" id="sidebarUsername">admin</span>
+        </div>
+        <button class="sidebar-logout-btn" onclick="doLogout()">
+          <span>🚪</span> Logout
+        </button>
+      </div>
     </aside>
 
     <!-- MAIN -->
@@ -47,130 +63,139 @@
 
       <!-- HEADER -->
       <header class="header">
-
-        <h1>Dashboard Monitoring Rumah</h1>
-
-        <!-- WAKTU REAL-TIME + STATUS (tambahan baru) -->
-        <div class="header-right">
-          <div class="clock" id="clock">
-            <span class="clock-time" id="clockTime">00:00:00</span>
-            <span class="clock-date" id="clockDate">Senin, 1 Januari 2025</span>
-          </div>
-
-          <!-- STATUS -->
-          <span id="connectionStatus">● Offline</span>
+        <div class="header-left">
+          <h1 class="header-title">Dashboard Monitoring</h1>
+          <p class="header-sub">Monitoring listrik rumah real-time</p>
         </div>
 
+        <div class="header-right">
+          <div class="clock">
+            <span class="clock-time" id="clockTime">00:00:00</span>
+            <span class="clock-date" id="clockDate">—</span>
+          </div>
+          <span class="connection-badge" id="connectionStatus">● Offline</span>
+          <button class="logout-btn-header" onclick="doLogout()" title="Logout">🚪</button>
+        </div>
       </header>
 
-      <!-- KPI -->
-    <!-- KPI GRID -->
+      <!-- KPI GRID -->
       <section class="kpi-grid">
 
         <!-- VOLTAGE -->
         <div class="kpi-card voltage">
           <div class="kpi-header">
-            <div class="kpi-label">Tegangan</div>
+            <span class="kpi-label">Tegangan</span>
+            <span class="kpi-badge unknown" id="voltageBadge">
+              <span class="kpi-badge-dot"></span>
+              <span id="voltageBadgeText">–</span>
+            </span>
           </div>
           <div class="kpi-display">
             <div class="kpi-icon-box">⚡</div>
             <div class="kpi-data">
-              <span class="kpi-value" id="tegangan">-</span>
-              <span class="kpi-unit">Volt</span>
+              <span class="kpi-value" id="tegangan">–</span>
+              <span class="kpi-unit">V</span>
             </div>
-          </div>
-          <div class="kpi-footer">
-            <span class="kpi-badge normal" id="voltageBadge">
-              <span class="kpi-badge-dot"></span>
-              <span id="voltageBadgeText">Normal</span>
-            </span>
           </div>
         </div>
 
         <!-- CURRENT -->
         <div class="kpi-card current">
           <div class="kpi-header">
-            <div class="kpi-label">Arus</div>
+            <span class="kpi-label">Arus</span>
+            <span class="kpi-badge unknown" id="currentBadge">
+              <span class="kpi-badge-dot"></span>
+              <span id="currentBadgeText">–</span>
+            </span>
           </div>
           <div class="kpi-display">
             <div class="kpi-icon-box">🔌</div>
             <div class="kpi-data">
-              <span class="kpi-value" id="arus">-</span>
-              <span class="kpi-unit">Ampere</span>
+              <span class="kpi-value" id="arus">–</span>
+              <span class="kpi-unit">A</span>
             </div>
-          </div>
-          <div class="kpi-footer">
-            <span class="kpi-badge warning" id="currentBadge">
-              <span class="kpi-badge-dot"></span>
-              <span id="currentBadgeText">Aman</span>
-            </span>
           </div>
         </div>
 
         <!-- POWER -->
         <div class="kpi-card power">
           <div class="kpi-header">
-            <div class="kpi-label">Daya</div>
+            <span class="kpi-label">Daya</span>
+            <span class="kpi-badge unknown">
+              <span class="kpi-badge-dot"></span>
+              <span>–</span>
+            </span>
           </div>
           <div class="kpi-display">
             <div class="kpi-icon-box">💡</div>
             <div class="kpi-data">
-              <span class="kpi-value" id="daya">-</span>
-              <span class="kpi-unit">Watt</span>
+              <span class="kpi-value" id="daya">–</span>
+              <span class="kpi-unit">W</span>
             </div>
-          </div>
-          <div class="kpi-footer">
-            <!-- Optional -->
           </div>
         </div>
 
         <!-- FREQUENCY -->
         <div class="kpi-card frequency">
           <div class="kpi-header">
-            <div class="kpi-label">Frekuensi</div>
+            <span class="kpi-label">Frekuensi</span>
+            <span class="kpi-badge unknown">
+              <span class="kpi-badge-dot"></span>
+              <span>–</span>
+            </span>
           </div>
           <div class="kpi-display">
             <div class="kpi-icon-box">📡</div>
             <div class="kpi-data">
-              <span class="kpi-value" id="frekuensi">-</span>
+              <span class="kpi-value" id="frekuensi">–</span>
               <span class="kpi-unit">Hz</span>
             </div>
           </div>
-          <div class="kpi-footer">
-            <!-- Optional -->
-          </div>
         </div>
 
-      </section>
+       <!-- POWER FACTOR -->
+      <div class="kpi-card pf">
+        <div class="kpi-header">
+          <span class="kpi-label">Faktor Daya</span>
+          <span class="kpi-badge unknown">
+            <span class="kpi-badge-dot"></span>
+            <span>–</span>
+          </span>
+        </div>
+
+        <div class="kpi-display">
+          <div class="kpi-icon-box">📐</div>
+
+          <div class="kpi-data">
+            <span class="kpi-value" id="pf">–</span>
+            <span class="kpi-unit">PF</span>
+          </div>
+        </div>
+      </div>
 
       </section>
 
-      <!-- CONTENT GRID: CHART + STATUS PANEL -->
+      <!-- CONTENT GRID -->
       <section class="content-grid">
 
         <!-- CHART -->
         <div class="chart-section">
-
           <div class="section-header">
-            <h3>Grafik Monitoring Real-time</h3>
+            <h3>📉 Grafik Real-time</h3>
           </div>
-
           <div class="chart-container">
             <canvas id="chart"></canvas>
           </div>
-
         </div>
 
-        <!-- STATUS PANEL (TAMBAHAN BARU - SATU KONTAINER) -->
+        <!-- STATUS PANEL -->
         <div class="status-section">
-
           <div class="section-header">
             <h3>📋 Status Sistem</h3>
           </div>
 
           <div class="status-container">
 
-            <!-- ESP STATUS -->
             <div class="status-row state-offline" id="espStatusRow">
               <div class="status-row-left">
                 <div class="status-row-icon">📡</div>
@@ -178,35 +203,110 @@
               </div>
               <div class="status-row-right">
                 <span class="status-pill pill-offline" id="espPill">
-                  <span class="status-pill-dot" id="espPillDot"></span>
+                  <span class="status-pill-dot"></span>
                   <span id="espPillText">Offline</span>
                 </span>
               </div>
             </div>
 
-            <!-- LAST UPDATE -->
-            <div class="status-row last-update-row">
+            <div class="status-row state-time last-update-row">
               <div class="status-row-left">
                 <div class="status-row-icon">🕐</div>
                 <div class="status-row-name">Update Terakhir</div>
               </div>
               <div class="status-row-right">
-                <div class="status-row-value time-value" id="lastUpdateValue">-</div>
+                <div class="status-row-value time-value" id="lastUpdateValue">–</div>
+              </div>
+            </div>
+
+            <div class="status-row state-normal">
+              <div class="status-row-left">
+                <div class="status-row-icon">👤</div>
+                <div class="status-row-name">User</div>
+              </div>
+              <div class="status-row-right">
+                <div class="status-row-value" id="statusUsername">–</div>
+              </div>
+            </div>
+
+            <div class="status-row state-normal">
+              <div class="status-row-left">
+                <div class="status-row-icon">🔑</div>
+                <div class="status-row-name">Role</div>
+              </div>
+              <div class="status-row-right">
+                <div class="status-row-value" id="statusRole">–</div>
               </div>
             </div>
 
           </div>
+
+          <!-- LOGOUT BUTTON (inside status panel, visible on all screens) -->
+          <button class="full-logout-btn" onclick="doLogout()">
+            🚪 Logout
+          </button>
 
         </div>
 
       </section>
 
     </main>
-
   </div>
 
-  <!-- APP JS -->
-  <script src="app.js"></script>
+  <!-- LOGOUT CONFIRM MODAL -->
+  <div class="modal-overlay" id="logoutModal">
+    <div class="modal-box">
+      <div class="modal-icon">🚪</div>
+      <h3>Keluar dari sistem?</h3>
+      <p>Sesi Anda akan dihapus dan Anda diarahkan ke halaman login.</p>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeLogoutModal()">Batal</button>
+        <button class="modal-btn confirm" onclick="confirmLogout()">Ya, Logout</button>
+      </div>
+    </div>
+  </div>
 
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+
+  <script>
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+      const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      document.getElementById('clockTime').textContent = now.toLocaleTimeString('id-ID');
+      document.getElementById('clockDate').textContent =
+        `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Sidebar
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+      document.getElementById('menuToggle').classList.toggle('active');
+    }
+
+    // Show user info
+    const pmUser = JSON.parse(sessionStorage.getItem('pm_user') || '{}');
+    if (pmUser.username) {
+      document.getElementById('sidebarUsername').textContent = pmUser.username;
+      document.getElementById('statusUsername').textContent = pmUser.username;
+      document.getElementById('statusRole').textContent = pmUser.role || 'user';
+    }
+
+    // Logout modal
+    function doLogout() {
+      document.getElementById('logoutModal').classList.add('active');
+    }
+    function closeLogoutModal() {
+      document.getElementById('logoutModal').classList.remove('active');
+    }
+    function confirmLogout() {
+      sessionStorage.clear();
+      window.location.href = '/';
+    }
+  </script>
 </body>
 </html>
