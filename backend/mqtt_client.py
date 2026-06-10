@@ -14,6 +14,7 @@ MQTT_BROKER = "broker.hivemq.com"
 MQTT_PORT = 1883
 
 MQTT_TOPIC = "esp32/power_monitor"
+MQTT_RELAY_TOPIC = "esp32/control"
 
 # =========================
 # STORAGE
@@ -36,6 +37,9 @@ start_time = time.time()
 
 # WAKTU TERAKHIR DATA ESP
 last_esp_timestamp = 0
+
+# MQTT CLIENT GLOBAL (untuk publish)
+_mqtt_client = None
 
 # =========================
 # MQTT CONNECT
@@ -187,6 +191,8 @@ def on_message(
 
 def start_mqtt():
 
+    global _mqtt_client
+
     client = mqtt.Client()
 
     client.on_connect = on_connect
@@ -204,6 +210,8 @@ def start_mqtt():
         60
     )
 
+    _mqtt_client = client
+
     thread = threading.Thread(
         target=client.loop_forever
     )
@@ -211,6 +219,41 @@ def start_mqtt():
     thread.daemon = True
 
     thread.start()
+
+# =========================
+# PUBLISH RELAY
+# =========================
+
+def publish_relay(payload):
+
+    global _mqtt_client
+
+    if _mqtt_client is None:
+        print("❌ MQTT client belum siap")
+        return False
+
+    try:
+
+        message = json.dumps(payload)
+
+        result = _mqtt_client.publish(
+            MQTT_RELAY_TOPIC,
+            message
+        )
+
+        if result.rc == 0:
+            print(
+                f"📤 RELAY → PIN {payload['pin']} "
+                f"{'ON' if payload['state'] else 'OFF'}"
+            )
+            return True
+
+        print("❌ Publish gagal, rc:", result.rc)
+        return False
+
+    except Exception as e:
+        print("❌ Publish error:", e)
+        return False
 
 # =========================
 # GET CURRENT DATA

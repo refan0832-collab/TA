@@ -1,14 +1,15 @@
 from flask import (
     Flask,
     jsonify,
-    render_template
+    render_template,
+    request
 )
 
 from flask_cors import CORS
 
 import mqtt_client
 
-from login import auth_bp
+from login import auth_bp, require_auth
 
 # =========================
 # APP
@@ -49,6 +50,15 @@ app.register_blueprint(auth_bp)
 mqtt_client.start_mqtt()
 
 # =========================
+# RELAY STATE
+# =========================
+
+relay_state = {
+    19: False,
+    21: False
+}
+
+# =========================
 # FRONTEND ROUTES
 # =========================
 
@@ -79,12 +89,65 @@ def history_page():
 
 # =========================
 
-@app.route("/settings")
-def settings_page():
+@app.route("/controller")
+def controller_page():
 
     return render_template(
-        "settings.html"
+        "controller.html"
     )
+
+# =========================
+# API RELAY CONTROL
+# =========================
+
+@app.route("/api/relay/control", methods=["POST"])
+def relay_control():
+
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({"error": "Body JSON diperlukan"}), 400
+
+    pin = data.get("pin")
+    state = data.get("state")
+
+    if pin not in [19, 21]:
+        return jsonify({"error": "Pin tidak valid. Gunakan pin 19 atau 21"}), 400
+
+    if not isinstance(state, bool):
+        return jsonify({"error": "State harus boolean (true/false)"}), 400
+
+    payload = {
+        "pin": pin,
+        "state": state
+    }
+
+    success = mqtt_client.publish_relay(payload)
+
+    if not success:
+        return jsonify({"error": "Gagal mengirim perintah ke MQTT"}), 500
+
+    relay_state[pin] = state
+
+    print(f"🔁 Relay PIN {pin} → {'ON' if state else 'OFF'}")
+
+    return jsonify({
+        "pin":    pin,
+        "state":  state,
+        "status": "ok"
+    }), 200
+
+# =========================
+# API RELAY STATUS
+# =========================
+
+@app.route("/api/relay/status")
+def relay_status():
+
+    return jsonify({
+        19: relay_state[19],
+        21: relay_state[21]
+    })
 
 # =========================
 # API CURRENT

@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>🎛️ PowerMonitor Controller</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <!-- HAMBURGER -->
+  <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+
+  <!-- OVERLAY -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <div class="container" id="container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-logo">⚡</span>
+        <span class="sidebar-title">PowerMonitor</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li onclick="window.location.href='/dashboard'">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Dashboard</span>
+          </li>
+          <li onclick="window.location.href='/history-page'">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">History</span>
+          </li>
+          <li class="active">
+            <span class="nav-icon">🎛️</span>
+            <span class="nav-label">Controller</span>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user" id="sidebarUser">
+          <span class="sidebar-user-icon">👤</span>
+          <span class="sidebar-username" id="sidebarUsername">admin</span>
+        </div>
+        <button class="sidebar-logout-btn" onclick="doLogout()">
+          <span>🚪</span> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" id="main">
+
+      <!-- HEADER -->
+      <header class="header">
+        <div class="header-left">
+          <h1 class="header-title">Controller</h1>
+          <p class="header-sub">Kontrol relay ESP32 secara real-time</p>
+        </div>
+
+        <div class="header-right">
+          <div class="clock">
+            <span class="clock-time" id="clockTime">00:00:00</span>
+            <span class="clock-date" id="clockDate">—</span>
+          </div>
+          <span class="connection-badge" id="connectionStatus">● Offline</span>
+          <button class="logout-btn-header" onclick="doLogout()" title="Logout">🚪</button>
+        </div>
+      </header>
+
+      <!-- ESP STATUS BAR -->
+      <div class="ctrl-esp-bar" id="ctrlEspBar">
+        <span class="ctrl-esp-dot" id="ctrlEspDot"></span>
+        <span class="ctrl-esp-label" id="ctrlEspLabel">Menghubungkan ke ESP32...</span>
+        <span class="ctrl-esp-time" id="ctrlEspTime"></span>
+      </div>
+
+      <!-- RELAY GRID -->
+      <section class="relay-grid">
+
+        <!-- RELAY 1 — PIN 19 -->
+        <div class="relay-card" id="relayCard19">
+          <div class="relay-card-bar relay-bar-1"></div>
+
+          <div class="relay-top">
+            <div class="relay-icon-wrap">
+              <span class="relay-icon">💡</span>
+            </div>
+            <div class="relay-info">
+              <h3 class="relay-name">Relay 1</h3>
+              <p class="relay-pin">PIN GPIO 19</p>
+            </div>
+            <div class="relay-status-badge" id="relayBadge19">
+              <span class="relay-status-dot"></span>
+              <span class="relay-status-text" id="relayStatus19">OFF</span>
+            </div>
+          </div>
+
+          <div class="relay-mid">
+            <div class="relay-power-indicator" id="relayIndicator19">
+              <div class="relay-ring relay-ring-outer"></div>
+              <div class="relay-ring relay-ring-mid"></div>
+              <div class="relay-ring relay-ring-inner"></div>
+              <span class="relay-power-icon">⚡</span>
+            </div>
+          </div>
+
+          <div class="relay-bottom">
+            <div class="relay-meta">
+              <div class="relay-meta-item">
+                <span class="relay-meta-label">Status</span>
+                <span class="relay-meta-value" id="relayMeta19">Tidak Aktif</span>
+              </div>
+              <div class="relay-meta-item">
+                <span class="relay-meta-label">Terakhir Diubah</span>
+                <span class="relay-meta-value" id="relayTime19">—</span>
+              </div>
+            </div>
+
+            <!-- TOGGLE SWITCH -->
+            <label class="relay-toggle" for="switch19" aria-label="Toggle Relay 1">
+              <input
+                type="checkbox"
+                id="switch19"
+                class="relay-toggle-input"
+                onchange="toggleRelay(19, this.checked)"
+              >
+              <span class="relay-toggle-track">
+                <span class="relay-toggle-thumb">
+                  <span class="relay-toggle-thumb-icon"></span>
+                </span>
+              </span>
+            </label>
+          </div>
+
+          <!-- LOADING OVERLAY -->
+          <div class="relay-loading" id="relayLoading19">
+            <div class="relay-spinner"></div>
+          </div>
+        </div>
+
+        <!-- RELAY 2 — PIN 21 -->
+        <div class="relay-card" id="relayCard21">
+          <div class="relay-card-bar relay-bar-2"></div>
+
+          <div class="relay-top">
+            <div class="relay-icon-wrap">
+              <span class="relay-icon">🔌</span>
+            </div>
+            <div class="relay-info">
+              <h3 class="relay-name">Relay 2</h3>
+              <p class="relay-pin">PIN GPIO 21</p>
+            </div>
+            <div class="relay-status-badge" id="relayBadge21">
+              <span class="relay-status-dot"></span>
+              <span class="relay-status-text" id="relayStatus21">OFF</span>
+            </div>
+          </div>
+
+          <div class="relay-mid">
+            <div class="relay-power-indicator" id="relayIndicator21">
+              <div class="relay-ring relay-ring-outer"></div>
+              <div class="relay-ring relay-ring-mid"></div>
+              <div class="relay-ring relay-ring-inner"></div>
+              <span class="relay-power-icon">⚡</span>
+            </div>
+          </div>
+
+          <div class="relay-bottom">
+            <div class="relay-meta">
+              <div class="relay-meta-item">
+                <span class="relay-meta-label">Status</span>
+                <span class="relay-meta-value" id="relayMeta21">Tidak Aktif</span>
+              </div>
+              <div class="relay-meta-item">
+                <span class="relay-meta-label">Terakhir Diubah</span>
+                <span class="relay-meta-value" id="relayTime21">—</span>
+              </div>
+            </div>
+
+            <!-- TOGGLE SWITCH -->
+            <label class="relay-toggle" for="switch21" aria-label="Toggle Relay 2">
+              <input
+                type="checkbox"
+                id="switch21"
+                class="relay-toggle-input"
+                onchange="toggleRelay(21, this.checked)"
+              >
+              <span class="relay-toggle-track">
+                <span class="relay-toggle-thumb">
+                  <span class="relay-toggle-thumb-icon"></span>
+                </span>
+              </span>
+            </label>
+          </div>
+
+          <!-- LOADING OVERLAY -->
+          <div class="relay-loading" id="relayLoading21">
+            <div class="relay-spinner"></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- LOG SECTION -->
+      <section class="ctrl-log-section">
+        <div class="section-header">
+          <h3>📋 Log Aktivitas Relay</h3>
+          <button class="ctrl-log-clear-btn" onclick="clearLog()">🗑️ Hapus Log</button>
+        </div>
+        <div class="ctrl-log-container" id="ctrlLog">
+          <div class="ctrl-log-empty">Belum ada aktivitas</div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="ctrl-toast" id="ctrlToast"></div>
+
+  <!-- LOGOUT CONFIRM MODAL -->
+  <div class="modal-overlay" id="logoutModal">
+    <div class="modal-box">
+      <div class="modal-icon">🚪</div>
+      <h3>Keluar dari sistem?</h3>
+      <p>Sesi Anda akan dihapus dan Anda diarahkan ke halaman login.</p>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeLogoutModal()">Batal</button>
+        <button class="modal-btn confirm" onclick="confirmLogout()">Ya, Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    // ===============================
+    // STATE
+    // ===============================
+    const relayState = { 19: false, 21: false };
+    const logItems = [];
+
+    // ===============================
+    // CLOCK
+    // ===============================
+    function updateClock() {
+      const now = new Date();
+      const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+      const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      document.getElementById('clockTime').textContent = now.toLocaleTimeString('id-ID');
+      document.getElementById('clockDate').textContent =
+        `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ===============================
+    // SIDEBAR
+    // ===============================
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+      document.getElementById('menuToggle').classList.toggle('active');
+    }
+
+    // User info
+    const pmUser = JSON.parse(sessionStorage.getItem('pm_user') || '{}');
+    if (pmUser.username) {
+      document.getElementById('sidebarUsername').textContent = pmUser.username;
+    }
+
+    // ===============================
+    // LOGOUT
+    // ===============================
+    function doLogout() {
+      document.getElementById('logoutModal').classList.add('active');
+    }
+    function closeLogoutModal() {
+      document.getElementById('logoutModal').classList.remove('active');
+    }
+    function confirmLogout() {
+      sessionStorage.clear();
+      window.location.href = '/';
+    }
+
+    // ===============================
+    // TOAST
+    // ===============================
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('ctrlToast');
+      toast.textContent = message;
+      toast.className = `ctrl-toast ctrl-toast-${type} ctrl-toast-show`;
+      setTimeout(() => {
+        toast.className = 'ctrl-toast';
+      }, 3000);
+    }
+
+    // ===============================
+    // UPDATE RELAY UI
+    // ===============================
+    function updateRelayUI(pin, isOn) {
+      const card       = document.getElementById(`relayCard${pin}`);
+      const badge      = document.getElementById(`relayBadge${pin}`);
+      const statusText = document.getElementById(`relayStatus${pin}`);
+      const meta       = document.getElementById(`relayMeta${pin}`);
+      const indicator  = document.getElementById(`relayIndicator${pin}`);
+      const timeEl     = document.getElementById(`relayTime${pin}`);
+      const switchEl   = document.getElementById(`switch${pin}`);
+
+      const now = new Date().toLocaleTimeString('id-ID');
+
+      if (isOn) {
+        card.classList.add('relay-card-on');
+        badge.classList.add('relay-badge-on');
+        badge.classList.remove('relay-badge-off');
+        statusText.textContent = 'ON';
+        meta.textContent = 'Aktif';
+        indicator.classList.add('relay-indicator-on');
+      } else {
+        card.classList.remove('relay-card-on');
+        badge.classList.remove('relay-badge-on');
+        badge.classList.add('relay-badge-off');
+        statusText.textContent = 'OFF';
+        meta.textContent = 'Tidak Aktif';
+        indicator.classList.remove('relay-indicator-on');
+      }
+
+      timeEl.textContent = now;
+      switchEl.checked = isOn;
+    }
+
+    // ===============================
+    // TOGGLE RELAY
+    // ===============================
+    async function toggleRelay(pin, isOn) {
+      const loading = document.getElementById(`relayLoading${pin}`);
+      const switchEl = document.getElementById(`switch${pin}`);
+
+      console.log(`[Relay] PIN ${pin} → ${isOn ? 'ON' : 'OFF'}`);
+
+      // Tampilkan loading, disable switch
+      loading.classList.add('relay-loading-show');
+      switchEl.disabled = true;
+
+      try {
+        const token = sessionStorage.getItem('pm_token');
+        console.log('[Relay] Token:', token ? 'ada' : 'TIDAK ADA');
+
+        const res = await fetch('/api/relay/control', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ pin: pin, state: isOn })
+        });
+
+        console.log('[Relay] Response status:', res.status);
+
+        const data = await res.json();
+        console.log('[Relay] Response data:', data);
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Gagal mengirim perintah');
+        }
+
+        // Update state & UI
+        relayState[pin] = isOn;
+        updateRelayUI(pin, isOn);
+
+        // Add to log
+        addLog(pin, isOn);
+
+        // Toast sukses
+        showToast(
+          `Relay ${pin === 19 ? '1' : '2'} (PIN ${pin}) berhasil di${isOn ? 'aktifkan' : 'matikan'}`,
+          isOn ? 'success' : 'warning'
+        );
+
+      } catch (err) {
+        console.error('[Relay Error]', err);
+
+        // Revert switch ke state sebelumnya
+        switchEl.checked = relayState[pin];
+
+        showToast(`Error: ${err.message}`, 'error');
+
+      } finally {
+        loading.classList.remove('relay-loading-show');
+        switchEl.disabled = false;
+      }
+    }
+
+    // ===============================
+    // ADD LOG
+    // ===============================
+    function addLog(pin, isOn) {
+      const container = document.getElementById('ctrlLog');
+      const empty = container.querySelector('.ctrl-log-empty');
+      if (empty) empty.remove();
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('id-ID');
+      const dateStr = now.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+
+      const relayLabel = pin === 19 ? 'Relay 1' : 'Relay 2';
+      const action     = isOn ? 'ON' : 'OFF';
+      const user       = pmUser.username || 'admin';
+
+      const item = document.createElement('div');
+      item.className = `ctrl-log-item ctrl-log-${isOn ? 'on' : 'off'}`;
+      item.innerHTML = `
+        <div class="ctrl-log-left">
+          <span class="ctrl-log-dot"></span>
+          <div class="ctrl-log-text">
+            <span class="ctrl-log-action">${relayLabel} (PIN ${pin})</span>
+            <span class="ctrl-log-detail">diubah ke <strong>${action}</strong> oleh <em>${user}</em></span>
+          </div>
+        </div>
+        <div class="ctrl-log-right">
+          <span class="ctrl-log-time">${timeStr}</span>
+          <span class="ctrl-log-date">${dateStr}</span>
+        </div>
+      `;
+
+      container.insertBefore(item, container.firstChild);
+
+      // Limit log ke 50 item
+      const items = container.querySelectorAll('.ctrl-log-item');
+      if (items.length > 50) {
+        items[items.length - 1].remove();
+      }
+    }
+
+    // ===============================
+    // CLEAR LOG
+    // ===============================
+    function clearLog() {
+      const container = document.getElementById('ctrlLog');
+      container.innerHTML = '<div class="ctrl-log-empty">Belum ada aktivitas</div>';
+      showToast('Log aktivitas dihapus', 'info');
+    }
+
+    // ===============================
+    // FETCH RELAY STATUS (sinkronisasi)
+    // ===============================
+    async function fetchRelayStatus() {
+      try {
+        const token = sessionStorage.getItem('pm_token');
+        const res = await fetch('/api/relay/status', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        // Sync UI dengan state dari server
+        [19, 21].forEach(pin => {
+          if (data[pin] !== undefined && data[pin] !== relayState[pin]) {
+            relayState[pin] = data[pin];
+            updateRelayUI(pin, data[pin]);
+          }
+        });
+
+      } catch (err) {
+        console.warn('[Relay Status]', err.message);
+      }
+    }
+
+    // ===============================
+    // FETCH ESP STATUS
+    // ===============================
+    async function fetchEspStatus() {
+      try {
+        const res = await fetch('/api/esp-status');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const dot   = document.getElementById('ctrlEspDot');
+        const label = document.getElementById('ctrlEspLabel');
+        const time  = document.getElementById('ctrlEspTime');
+        const badge = document.getElementById('connectionStatus');
+
+        if (data.esp_online) {
+          dot.className   = 'ctrl-esp-dot dot-online';
+          label.textContent = 'ESP32 Terhubung';
+          badge.textContent = '● Online';
+          badge.style.color = '#22c55e';
+          if (data.last_seen) time.textContent = `Update: ${data.last_seen}`;
+        } else {
+          dot.className   = 'ctrl-esp-dot dot-offline';
+          label.textContent = 'ESP32 Tidak Terhubung';
+          badge.textContent = '● Offline';
+          badge.style.color = '#ef4444';
+          time.textContent = data.last_seen ? `Terakhir: ${data.last_seen}` : '';
+        }
+
+      } catch (err) {
+        console.warn('[ESP Status]', err.message);
+      }
+    }
+
+    // ===============================
+    // INIT
+    // ===============================
+    fetchRelayStatus();
+    fetchEspStatus();
+
+    setInterval(fetchEspStatus, 3000);
+    setInterval(fetchRelayStatus, 5000);
+
+  </script>
+</body>
+</html>

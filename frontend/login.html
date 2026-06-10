@@ -344,7 +344,10 @@
 
         sessionStorage.setItem(
           "pm_user",
-          data.username
+          JSON.stringify({
+            username: data.username,
+            role: data.role
+          })
         );
 
         sessionStorage.setItem(

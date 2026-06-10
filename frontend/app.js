@@ -574,12 +574,36 @@ class PowerMonitor {
         "espPillText"
       );
 
+    const espPill =
+      document.getElementById(
+        "espPill"
+      );
+
+    const espStatusRow =
+      document.getElementById(
+        "espStatusRow"
+      );
+
     if (espPillText) {
 
       espPillText.textContent =
         this.isEspOnline
           ? "Online"
           : "Offline";
+    }
+
+    if (espPill) {
+
+      espPill.className = this.isEspOnline
+        ? "status-pill pill-online"
+        : "status-pill pill-offline";
+    }
+
+    if (espStatusRow) {
+
+      espStatusRow.className = this.isEspOnline
+        ? "status-row state-online"
+        : "status-row state-offline";
     }
 
     const lastUpdate =
