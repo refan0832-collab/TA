@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>📈 PowerMonitor History</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* =============================
+       HISTORY PAGE SPECIFIC STYLES
+       ============================= */
+
+    /* TODAY KPI ROW */
+    .hist-today-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .hist-today-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .hist-today-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-hi);
+    }
+    .hist-today-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      border-radius: 2px 0 0 2px;
+    }
+    .hist-today-card.c-kwh::before   { background: var(--volt);    box-shadow: 0 0 10px var(--volt); }
+    .hist-today-card.c-wh::before    { background: var(--curr);    box-shadow: 0 0 10px var(--curr); }
+    .hist-today-card.c-peak::before  { background: var(--pow);     box-shadow: 0 0 10px var(--pow);  }
+    .hist-today-card.c-avg::before   { background: var(--freq);    box-shadow: 0 0 10px var(--freq); }
+
+    .hist-today-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-mid);
+      margin-bottom: 0.5rem;
+    }
+    .hist-today-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--text-hi);
+      line-height: 1;
+    }
+    .hist-today-unit {
+      font-size: 0.8rem;
+      color: var(--text-mid);
+      margin-left: 0.25rem;
+    }
+    .hist-today-sub {
+      font-size: 0.72rem;
+      color: var(--text-lo);
+      margin-top: 0.4rem;
+    }
+
+    /* CHART CARD */
+    .hist-chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .hist-chart-canvas-wrap {
+      height: 260px;
+      position: relative;
+      margin-top: 1rem;
+    }
+
+    /* TABLE CARD */
+    .hist-table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .hist-table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .hist-table-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-hi);
+    }
+    .hist-export-btn {
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.25);
+      color: var(--accent);
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .hist-export-btn:hover { background: rgba(59,130,246,0.2); }
+
+    .hist-table-wrap {
+      overflow-x: auto;
+    }
+    .hist-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .hist-table thead th {
+      padding: 0.85rem 1.25rem;
+      text-align: left;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-mid);
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .hist-table tbody tr {
+      border-bottom: 1px solid rgba(59,130,246,0.06);
+      transition: background 0.15s;
+    }
+    .hist-table tbody tr:hover { background: rgba(255,255,255,0.025); }
+    .hist-table tbody tr:last-child { border-bottom: none; }
+    .hist-table td {
+      padding: 0.9rem 1.25rem;
+      font-size: 0.85rem;
+      color: var(--text-hi);
+      white-space: nowrap;
+    }
+    .hist-table td.td-date {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-mid);
+    }
+    .hist-table td.td-kwh {
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      color: var(--volt);
+    }
+    .hist-table td.td-wh {
+      font-family: 'Space Mono', monospace;
+      color: var(--curr);
+    }
+    .hist-table td.td-peak {
+      font-family: 'Space Mono', monospace;
+      color: var(--pow);
+    }
+    .hist-table td.td-avg {
+      font-family: 'Space Mono', monospace;
+      color: var(--freq);
+    }
+    .hist-today-row td { background: rgba(56,189,248,0.05); }
+    .hist-today-badge {
+      display: inline-block;
+      background: rgba(56,189,248,0.15);
+      border: 1px solid rgba(56,189,248,0.3);
+      color: var(--volt);
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+
+    /* EMPTY STATE */
+    .hist-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-lo);
+      font-size: 0.85rem;
+    }
+    .hist-empty-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+
+    /* REALTIME PULSE */
+    .hist-live-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+      margin-right: 6px;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.3; }
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .hist-today-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 500px) {
+      .hist-today-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+      .hist-today-value { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HAMBURGER -->
+  <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+
+  <!-- OVERLAY -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <div class="container" id="container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-logo">⚡</span>
+        <span class="sidebar-title">PowerMonitor</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li onclick="window.location.href='/dashboard'">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Dashboard</span>
+          </li>
+          <li class="active">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">History</span>
+          </li>
+          <li onclick="window.location.href='/controller'">
+            <span class="nav-icon">🎛️</span>
+            <span class="nav-label">Controller</span>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user" id="sidebarUser">
+          <span class="sidebar-user-icon">👤</span>
+          <span class="sidebar-username" id="sidebarUsername">admin</span>
+        </div>
+        <button class="sidebar-logout-btn" onclick="doLogout()">
+          <span>🚪</span> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" id="main">
+
+      <!-- HEADER -->
+      <header class="header">
+        <div class="header-left">
+          <h1 class="header-title">History kWh</h1>
+          <p class="header-sub">Riwayat konsumsi energi harian</p>
+        </div>
+        <div class="header-right">
+          <div class="clock">
+            <span class="clock-time" id="clockTime">00:00:00</span>
+            <span class="clock-date" id="clockDate">—</span>
+          </div>
+          <span class="connection-badge" id="connectionStatus">● Offline</span>
+          <button class="logout-btn-header" onclick="doLogout()" title="Logout">🚪</button>
+        </div>
+      </header>
+
+      <!-- TODAY KPI CARDS -->
+      <section class="hist-today-grid">
+
+        <div class="hist-today-card c-kwh">
+          <div class="hist-today-label">
+            <span class="hist-live-dot"></span>kWh Hari Ini
+          </div>
+          <div>
+            <span class="hist-today-value" id="todayKwh">0.000</span>
+            <span class="hist-today-unit">kWh</span>
+          </div>
+          <div class="hist-today-sub" id="todayDate">—</div>
+        </div>
+
+        <div class="hist-today-card c-wh">
+          <div class="hist-today-label">Wh Hari Ini</div>
+          <div>
+            <span class="hist-today-value" id="todayWh">0.0</span>
+            <span class="hist-today-unit">Wh</span>
+          </div>
+          <div class="hist-today-sub" id="todaySamples">0 pembacaan</div>
+        </div>
+
+        <div class="hist-today-card c-peak">
+          <div class="hist-today-label">Puncak Daya</div>
+          <div>
+            <span class="hist-today-value" id="todayPeak">0.0</span>
+            <span class="hist-today-unit">W</span>
+          </div>
+          <div class="hist-today-sub">Tertinggi hari ini</div>
+        </div>
+
+        <div class="hist-today-card c-avg">
+          <div class="hist-today-label">Rata-rata Daya</div>
+          <div>
+            <span class="hist-today-value" id="todayAvg">0.0</span>
+            <span class="hist-today-unit">W</span>
+          </div>
+          <div class="hist-today-sub">Rerata hari ini</div>
+        </div>
+
+      </section>
+
+      <!-- BAR CHART 7 HARI -->
+      <div class="hist-chart-card">
+        <div class="section-header">
+          <h3>📊 Konsumsi kWh — 7 Hari Terakhir</h3>
+        </div>
+        <div class="hist-chart-canvas-wrap">
+          <canvas id="kwhChart"></canvas>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="hist-table-card">
+        <div class="hist-table-header">
+          <span class="hist-table-title">📋 Riwayat Harian</span>
+          <button class="hist-export-btn" onclick="exportCSV()">⬇️ Export CSV</button>
+        </div>
+        <div class="hist-table-wrap">
+          <table class="hist-table">
+            <thead>
+              <tr>
+                <th>Tanggal</th>
+                <th>kWh</th>
+                <th>Wh</th>
+                <th>Puncak Daya (W)</th>
+                <th>Rata-rata (W)</th>
+                <th>Pembacaan</th>
+                <th>Update Terakhir</th>
+              </tr>
+            </thead>
+            <tbody id="kwhTableBody">
+              <tr>
+                <td colspan="7">
+                  <div class="hist-empty">
+                    <span class="hist-empty-icon">📭</span>
+                    Memuat data...
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- LOGOUT CONFIRM MODAL -->
+  <div class="modal-overlay" id="logoutModal">
+    <div class="modal-box">
+      <div class="modal-icon">🚪</div>
+      <h3>Keluar dari sistem?</h3>
+      <p>Sesi Anda akan dihapus dan Anda diarahkan ke halaman login.</p>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeLogoutModal()">Batal</button>
+        <button class="modal-btn confirm" onclick="confirmLogout()">Ya, Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================
+    // CLOCK
+    // ============================
+    function updateClock() {
+      const now = new Date();
+      const days   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+      const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      document.getElementById('clockTime').textContent = now.toLocaleTimeString('id-ID');
+      document.getElementById('clockDate').textContent =
+        `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ============================
+    // SIDEBAR
+    // ============================
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+      document.getElementById('menuToggle').classList.toggle('active');
+    }
+
+    const pmUser = JSON.parse(sessionStorage.getItem('pm_user') || '{}');
+    if (pmUser.username) {
+      document.getElementById('sidebarUsername').textContent = pmUser.username;
+    }
+
+    // ============================
+    // LOGOUT
+    // ============================
+    function doLogout() { document.getElementById('logoutModal').classList.add('active'); }
+    function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); }
+    function confirmLogout() { sessionStorage.clear(); window.location.href = '/'; }
+
+    // ============================
+    // CHART INIT
+    // ============================
+    const ctx = document.getElementById('kwhChart').getContext('2d');
+    const kwhChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'kWh',
+          data: [],
+          backgroundColor: 'rgba(56,189,248,0.25)',
+          borderColor: '#38bdf8',
+          borderWidth: 2,
+          borderRadius: 6,
+          borderSkipped: false,
+          hoverBackgroundColor: 'rgba(56,189,248,0.45)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(2,11,24,0.95)',
+            borderColor: 'rgba(59,130,246,0.3)',
+            borderWidth: 1,
+            titleColor: '#94a3b8',
+            bodyColor: '#f0f6ff',
+            callbacks: {
+              label: ctx => `  ${ctx.parsed.y.toFixed(3)} kWh`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(59,130,246,0.07)' },
+            ticks: { color: '#64748b', font: { size: 11 } }
+          },
+          y: {
+            grid: { color: 'rgba(59,130,246,0.07)' },
+            ticks: {
+              color: '#64748b',
+              font: { size: 11 },
+              callback: v => v.toFixed(2) + ' kWh'
+            },
+            beginAtZero: true
+          }
+        }
+      }
+    });
+
+    // ============================
+    // FORMAT HELPERS
+    // ============================
+    function fmtDate(isoDate) {
+      const [y, m, d] = isoDate.split('-');
+      const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+    }
+
+    function fmtTime(isoStr) {
+      if (!isoStr) return '—';
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    // ============================
+    // TODAY KPI UPDATE
+    // ============================
+    function updateTodayCards(rec) {
+      document.getElementById('todayKwh').textContent    = rec.kwh.toFixed(3);
+      document.getElementById('todayWh').textContent     = rec.wh.toFixed(1);
+      document.getElementById('todayPeak').textContent   = rec.peak_watt.toFixed(1);
+      document.getElementById('todayAvg').textContent    = rec.avg_watt.toFixed(1);
+      document.getElementById('todaySamples').textContent = `${rec.samples.toLocaleString('id-ID')} pembacaan`;
+      document.getElementById('todayDate').textContent   = fmtDate(rec.date);
+    }
+
+    // ============================
+    // TABLE UPDATE
+    // ============================
+    let allData = [];
+
+    function renderTable(records) {
+      const today = new Date().toISOString().split('T')[0];
+      const tbody = document.getElementById('kwhTableBody');
+
+      if (!records || records.length === 0) {
+        tbody.innerHTML = `
+          <tr><td colspan="7">
+            <div class="hist-empty">
+              <span class="hist-empty-icon">📭</span>
+              Belum ada data kWh tersimpan
+            </div>
+          </td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = records.map(rec => {
+        const isToday = rec.date === today;
+        const badge   = isToday ? '<span class="hist-today-badge">HARI INI</span>' : '';
+        const cls     = isToday ? ' class="hist-today-row"' : '';
+        return `
+          <tr${cls}>
+            <td class="td-date">${fmtDate(rec.date)}${badge}</td>
+            <td class="td-kwh">${rec.kwh.toFixed(3)}</td>
+            <td class="td-wh">${rec.wh.toFixed(1)}</td>
+            <td class="td-peak">${rec.peak_watt.toFixed(1)}</td>
+            <td class="td-avg">${rec.avg_watt.toFixed(1)}</td>
+            <td>${rec.samples.toLocaleString('id-ID')}</td>
+            <td>${fmtTime(rec.last_seen)}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    // ============================
+    // CHART UPDATE
+    // ============================
+    function updateChart(records) {
+      // Ambil 7 hari terakhir, urutkan ascending
+      const last7 = [...records]
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(-7);
+
+      kwhChart.data.labels   = last7.map(r => fmtDate(r.date));
+      kwhChart.data.datasets[0].data = last7.map(r => r.kwh);
+      kwhChart.update('active');
+    }
+
+    // ============================
+    // FETCH ALL kWh HISTORY
+    // ============================
+    async function fetchHistory() {
+      try {
+        const res  = await fetch('/api/kwh/history');
+        const data = await res.json();
+        allData = data;
+        renderTable(data);
+        updateChart(data);
+      } catch (err) {
+        console.warn('[History]', err.message);
+      }
+    }
+
+    // ============================
+    // FETCH TODAY (realtime)
+    // ============================
+    async function fetchToday() {
+      try {
+        const res = await fetch('/api/kwh/today');
+        const rec = await res.json();
+        updateTodayCards(rec);
+
+        // Update baris hari ini di tabel tanpa re-render penuh
+        await fetchHistory();
+      } catch (err) {
+        console.warn('[Today]', err.message);
+      }
+    }
+
+    // ============================
+    // ESP STATUS (badge header)
+    // ============================
+    async function fetchEspStatus() {
+      try {
+        const res  = await fetch('/api/esp-status');
+        const data = await res.json();
+        const badge = document.getElementById('connectionStatus');
+        if (data.esp_online) {
+          badge.textContent = '● Online';
+          badge.style.color = '#22c55e';
+        } else {
+          badge.textContent = '● Offline';
+          badge.style.color = '#ef4444';
+        }
+      } catch (_) {}
+    }
+
+    // ============================
+    // EXPORT CSV
+    // ============================
+    function exportCSV() {
+      if (!allData || allData.length === 0) {
+        alert('Belum ada data untuk diekspor.');
+        return;
+      }
+      const header = ['Tanggal','kWh','Wh','Puncak_W','Rata2_W','Pembacaan','Update_Terakhir'];
+      const rows = allData.map(r => [
+        r.date,
+        r.kwh.toFixed(4),
+        r.wh.toFixed(2),
+        r.peak_watt.toFixed(2),
+        r.avg_watt.toFixed(2),
+        r.samples,
+        r.last_seen || ''
+      ]);
+      const csv  = [header, ...rows].map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `kwh_history_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ============================
+    // INIT
+    // ============================
+    fetchHistory();
+    fetchToday();
+    fetchEspStatus();
+
+    // Update today realtime setiap 5 detik
+    setInterval(fetchToday,     5000);
+    setInterval(fetchEspStatus, 5000);
+  </script>
+</body>
+</html>

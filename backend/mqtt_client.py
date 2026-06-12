@@ -5,6 +5,7 @@ import threading
 from datetime import datetime
 
 import paho.mqtt.client as mqtt
+import kwh_storage
 
 # =========================
 # MQTT CONFIG
@@ -154,6 +155,9 @@ def on_message(
 
         last_esp_timestamp = \
             time.time()
+
+        # AKUMULASI kWh HARIAN
+        kwh_storage.update_kwh(mapped["daya"], interval_seconds=1)
 
         # LIMIT HISTORY
         if len(history) > 500:

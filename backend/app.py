@@ -8,6 +8,7 @@ from flask import (
 from flask_cors import CORS
 
 import mqtt_client
+import kwh_storage
 
 from login import auth_bp, require_auth
 
@@ -238,6 +239,22 @@ def esp_status():
     return jsonify(
         mqtt_client.get_esp_status()
     )
+
+# =========================
+# API kWh HISTORY
+# =========================
+
+@app.route("/api/kwh/history")
+def kwh_history():
+    return jsonify(kwh_storage.get_kwh_history())
+
+# =========================
+# API kWh TODAY
+# =========================
+
+@app.route("/api/kwh/today")
+def kwh_today():
+    return jsonify(kwh_storage.get_kwh_today())
 
 # =========================
 # DEBUG
