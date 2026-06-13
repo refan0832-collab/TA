@@ -23,13 +23,15 @@ MQTT_RELAY_TOPIC = "esp32/control"
 
 current_data = {
 
-    "tegangan": 0,
-    "arus": 0,
-    "daya": 0,
-    "frekuensi": 0,
-    "pf": 0,
-
-    "timestamp": None
+    "tegangan":     0,
+    "arus":         0,
+    "daya":         0,
+    "frekuensi":    0,
+    "pf":           0,
+    "energy":       0,       # [BARU] kWh akumulatif dari PZEM
+    "overvoltage":  False,   # [BARU] status relay proteksi PIN 22
+    "undervoltage": False,   # [BARU] status relay proteksi PIN 23
+    "timestamp":    None
 }
 
 history = []
@@ -131,12 +133,37 @@ def on_message(
                     )
                 ),
 
-            # POWER FACTOR
             "pf":
                 float(
                     data.get(
                         "pf",
                         0
+                    )
+                ),
+
+            # [BARU] kWh akumulatif dari PZEM
+            "energy":
+                float(
+                    data.get(
+                        "energy",
+                        0
+                    )
+                ),
+
+            # [BARU] status relay proteksi
+            "overvoltage":
+                bool(
+                    data.get(
+                        "overvoltage",
+                        False
+                    )
+                ),
+
+            "undervoltage":
+                bool(
+                    data.get(
+                        "undervoltage",
+                        False
                     )
                 ),
 
@@ -156,8 +183,8 @@ def on_message(
         last_esp_timestamp = \
             time.time()
 
-        # AKUMULASI kWh HARIAN
-        kwh_storage.update_kwh(mapped["daya"], interval_seconds=1)
+        # [FIX] interval disesuaikan dengan interval kirim ESP (2 detik)
+        kwh_storage.update_kwh(mapped["daya"], interval_seconds=2)
 
         # LIMIT HISTORY
         if len(history) > 500:
@@ -172,6 +199,12 @@ def on_message(
         print("================================")
         print("📥 DATA MQTT")
         print(mapped)
+
+        if mapped["overvoltage"]:
+            print("⚠️  OVERVOLTAGE ACTIVE (Pin 22)")
+
+        if mapped["undervoltage"]:
+            print("⚠️  UNDERVOLTAGE ACTIVE (Pin 23)")
 
         print(
             "🕐 LAST UPDATE:",

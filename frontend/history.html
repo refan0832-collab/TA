@@ -118,6 +118,18 @@
     }
     .hist-export-btn:hover { background: rgba(59,130,246,0.2); }
 
+    .hist-reset-btn {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      color: #ef4444;
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .hist-reset-btn:hover { background: rgba(239,68,68,0.2); }
+
     .hist-table-wrap {
       overflow-x: auto;
     }
@@ -341,6 +353,7 @@
         <div class="hist-table-header">
           <span class="hist-table-title">📋 Riwayat Harian</span>
           <button class="hist-export-btn" onclick="exportCSV()">⬇️ Export CSV</button>
+          <button class="hist-reset-btn" onclick="openResetModal()">🗑️ Reset Data</button>
         </div>
         <div class="hist-table-wrap">
           <table class="hist-table">
@@ -381,6 +394,19 @@
       <div class="modal-actions">
         <button class="modal-btn cancel" onclick="closeLogoutModal()">Batal</button>
         <button class="modal-btn confirm" onclick="confirmLogout()">Ya, Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESET CONFIRM MODAL -->
+  <div class="modal-overlay" id="resetModal">
+    <div class="modal-box">
+      <div class="modal-icon">⚠️</div>
+      <h3>Reset semua data kWh?</h3>
+      <p>Seluruh riwayat kWh akan dihapus permanen dan tidak bisa dikembalikan.</p>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeResetModal()">Batal</button>
+        <button class="modal-btn confirm" style="background:#ef4444;" onclick="confirmReset()">Ya, Reset</button>
       </div>
     </div>
   </div>
@@ -627,6 +653,33 @@
       a.download = `kwh_history_${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
       URL.revokeObjectURL(url);
+    }
+
+    // ============================
+    // RESET kWh
+    // ============================
+    function openResetModal() {
+      document.getElementById('resetModal').classList.add('active');
+    }
+
+    function closeResetModal() {
+      document.getElementById('resetModal').classList.remove('active');
+    }
+
+    async function confirmReset() {
+      closeResetModal();
+      try {
+        const res = await fetch('/api/kwh/reset', { method: 'POST' });
+        if (res.ok) {
+          alert('✅ Data kWh berhasil direset.');
+          fetchHistory();
+          fetchToday();
+        } else {
+          alert('❌ Gagal reset data kWh.');
+        }
+      } catch (err) {
+        alert('❌ Tidak bisa menghubungi server.');
+      }
     }
 
     // ============================

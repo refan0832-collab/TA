@@ -152,6 +152,7 @@ def relay_status():
 
 # =========================
 # API CURRENT
+# [DIUPDATE] tambah field energy, overvoltage, undervoltage
 # =========================
 
 @app.route("/api/current")
@@ -162,49 +163,73 @@ def current():
     return jsonify({
 
         "tegangan":
-
             float(
-                data.get(
-                    "tegangan",
-                    0
-                ) or 0
+                data.get("tegangan", 0) or 0
             ),
 
         "arus":
-
             float(
-                data.get(
-                    "arus",
-                    0
-                ) or 0
+                data.get("arus", 0) or 0
             ),
 
         "daya":
-
             float(
-                data.get(
-                    "daya",
-                    0
-                ) or 0
+                data.get("daya", 0) or 0
             ),
 
         "frekuensi":
-
             float(
-                data.get(
-                    "frekuensi",
-                    0
-                ) or 0
+                data.get("frekuensi", 0) or 0
             ),
 
         "pf":
-
             float(
-                data.get(
-                    "pf",
-                    0
-                ) or 0
+                data.get("pf", 0) or 0
+            ),
+
+        # [BARU] kWh akumulatif dari PZEM
+        "energy":
+            float(
+                data.get("energy", 0) or 0
+            ),
+
+        # [BARU] status relay proteksi
+        "overvoltage":
+            bool(
+                data.get("overvoltage", False)
+            ),
+
+        "undervoltage":
+            bool(
+                data.get("undervoltage", False)
             )
+    })
+
+# =========================
+# [BARU] API PROTECTION STATUS
+# Endpoint khusus untuk status relay proteksi PIN 22 & 23
+# =========================
+
+@app.route("/api/protection")
+def protection_status():
+
+    data = mqtt_client.get_current_data()
+
+    return jsonify({
+
+        "overvoltage": {
+            "active":    bool(data.get("overvoltage", False)),
+            "pin":       22,
+            "threshold": 240.0,
+            "voltage":   float(data.get("tegangan", 0) or 0)
+        },
+
+        "undervoltage": {
+            "active":    bool(data.get("undervoltage", False)),
+            "pin":       23,
+            "threshold": 200.0,
+            "voltage":   float(data.get("tegangan", 0) or 0)
+        }
     })
 
 # =========================
@@ -241,6 +266,16 @@ def esp_status():
     )
 
 # =========================
+# API kWh RESET
+# =========================
+
+@app.route("/api/kwh/reset", methods=["POST"])
+def kwh_reset():
+    kwh_storage.reset_kwh()
+    print("🗑️  Data kWh direset")
+    return jsonify({"status": "ok", "message": "Data kWh berhasil direset"})
+
+# =========================
 # API kWh HISTORY
 # =========================
 
@@ -269,54 +304,17 @@ def debug():
 
         "current_data": {
 
-            "tegangan":
-
-                float(
-                    data.get(
-                        "tegangan",
-                        0
-                    ) or 0
-                ),
-
-            "arus":
-
-                float(
-                    data.get(
-                        "arus",
-                        0
-                    ) or 0
-                ),
-
-            "daya":
-
-                float(
-                    data.get(
-                        "daya",
-                        0
-                    ) or 0
-                ),
-
-            "frekuensi":
-
-                float(
-                    data.get(
-                        "frekuensi",
-                        0
-                    ) or 0
-                ),
-
-            "pf":
-
-                float(
-                    data.get(
-                        "pf",
-                        0
-                    ) or 0
-                )
+            "tegangan":    float(data.get("tegangan",    0) or 0),
+            "arus":        float(data.get("arus",        0) or 0),
+            "daya":        float(data.get("daya",        0) or 0),
+            "frekuensi":   float(data.get("frekuensi",   0) or 0),
+            "pf":          float(data.get("pf",          0) or 0),
+            "energy":      float(data.get("energy",      0) or 0),
+            "overvoltage": bool(data.get("overvoltage",  False)),
+            "undervoltage":bool(data.get("undervoltage", False))
         },
 
         "history_len":
-
             len(
                 mqtt_client.get_history()
             )

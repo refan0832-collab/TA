@@ -211,6 +211,92 @@
 
       </section>
 
+      <!-- PROTECTION STATUS -->
+      <section class="relay-grid" style="margin-top:1.5rem;">
+        <div style="grid-column:1/-1; margin-bottom:0.5rem;">
+          <h3 style="font-size:0.95rem; color:var(--text-mid); text-transform:uppercase; letter-spacing:0.08em;">
+            🛡️ Status Proteksi Otomatis
+          </h3>
+        </div>
+
+        <!-- OVERVOLTAGE -->
+        <div class="relay-card" id="protCard22">
+          <div class="relay-card-bar" style="background: var(--warn, #f97316);"></div>
+          <div class="relay-top">
+            <div class="relay-icon-wrap">
+              <span class="relay-icon">⚡</span>
+            </div>
+            <div class="relay-info">
+              <h3 class="relay-name">Proteksi Tegangan Tinggi</h3>
+              <p class="relay-pin">PIN GPIO 22 · Threshold &gt; 240V</p>
+            </div>
+            <div class="relay-status-badge" id="protBadge22">
+              <span class="relay-status-dot"></span>
+              <span class="relay-status-text" id="protStatus22">Normal</span>
+            </div>
+          </div>
+          <div class="relay-mid">
+            <div class="relay-power-indicator" id="protIndicator22">
+              <div class="relay-ring relay-ring-outer"></div>
+              <div class="relay-ring relay-ring-mid"></div>
+              <div class="relay-ring relay-ring-inner"></div>
+              <span class="relay-power-icon">🛡️</span>
+            </div>
+          </div>
+          <div class="relay-bottom">
+            <div class="relay-meta">
+              <div class="relay-meta-item">
+                <span class="relay-meta-label">Mode</span>
+                <span class="relay-meta-value">Otomatis</span>
+              </div>
+              <div class="relay-meta-item">
+                <span class="relay-meta-label">Tegangan</span>
+                <span class="relay-meta-value" id="protVolt22">– V</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UNDERVOLTAGE -->
+        <div class="relay-card" id="protCard23">
+          <div class="relay-card-bar" style="background: var(--curr, #22c55e);"></div>
+          <div class="relay-top">
+            <div class="relay-icon-wrap">
+              <span class="relay-icon">🔋</span>
+            </div>
+            <div class="relay-info">
+              <h3 class="relay-name">Proteksi Tegangan Rendah</h3>
+              <p class="relay-pin">PIN GPIO 23 · Threshold &lt; 200V</p>
+            </div>
+            <div class="relay-status-badge" id="protBadge23">
+              <span class="relay-status-dot"></span>
+              <span class="relay-status-text" id="protStatus23">Normal</span>
+            </div>
+          </div>
+          <div class="relay-mid">
+            <div class="relay-power-indicator" id="protIndicator23">
+              <div class="relay-ring relay-ring-outer"></div>
+              <div class="relay-ring relay-ring-mid"></div>
+              <div class="relay-ring relay-ring-inner"></div>
+              <span class="relay-power-icon">🛡️</span>
+            </div>
+          </div>
+          <div class="relay-bottom">
+            <div class="relay-meta">
+              <div class="relay-meta-item">
+                <span class="relay-meta-label">Mode</span>
+                <span class="relay-meta-value">Otomatis</span>
+              </div>
+              <div class="relay-meta-item">
+                <span class="relay-meta-label">Tegangan</span>
+                <span class="relay-meta-value" id="protVolt23">– V</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
       <!-- LOG SECTION -->
       <section class="ctrl-log-section">
         <div class="section-header">
@@ -511,13 +597,73 @@
     }
 
     // ===============================
+    // ===============================
+    // FETCH PROTECTION STATUS
+    // ===============================
+
+    async function fetchProtectionStatus() {
+      try {
+        const res = await fetch('/api/protection');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const ov = data.overvoltage;
+        const uv = data.undervoltage;
+
+        // Update PIN 22 (overvoltage)
+        const badge22  = document.getElementById('protBadge22');
+        const status22 = document.getElementById('protStatus22');
+        const card22   = document.getElementById('protCard22');
+        const volt22   = document.getElementById('protVolt22');
+        const ind22    = document.getElementById('protIndicator22');
+
+        if (ov.active) {
+          badge22.className  = 'relay-status-badge relay-badge-on';
+          status22.textContent = '⚠️ AKTIF';
+          card22.style.boxShadow = '0 0 16px rgba(249,115,22,0.5)';
+          ind22.classList.add('relay-indicator-on');
+        } else {
+          badge22.className  = 'relay-status-badge relay-badge-off';
+          status22.textContent = 'Normal';
+          card22.style.boxShadow = '';
+          ind22.classList.remove('relay-indicator-on');
+        }
+        if (volt22) volt22.textContent = ov.voltage.toFixed(1) + ' V';
+
+        // Update PIN 23 (undervoltage)
+        const badge23  = document.getElementById('protBadge23');
+        const status23 = document.getElementById('protStatus23');
+        const card23   = document.getElementById('protCard23');
+        const volt23   = document.getElementById('protVolt23');
+        const ind23    = document.getElementById('protIndicator23');
+
+        if (uv.active) {
+          badge23.className  = 'relay-status-badge relay-badge-on';
+          status23.textContent = '⚠️ AKTIF';
+          card23.style.boxShadow = '0 0 16px rgba(34,197,94,0.5)';
+          ind23.classList.add('relay-indicator-on');
+        } else {
+          badge23.className  = 'relay-status-badge relay-badge-off';
+          status23.textContent = 'Normal';
+          card23.style.boxShadow = '';
+          ind23.classList.remove('relay-indicator-on');
+        }
+        if (volt23) volt23.textContent = uv.voltage.toFixed(1) + ' V';
+
+      } catch (err) {
+        console.warn('[Protection] fetch error:', err.message);
+      }
+    }
+
     // INIT
     // ===============================
     fetchRelayStatus();
     fetchEspStatus();
+    fetchProtectionStatus();
 
-    setInterval(fetchEspStatus, 3000);
-    setInterval(fetchRelayStatus, 5000);
+    setInterval(fetchEspStatus,       3000);
+    setInterval(fetchRelayStatus,     5000);
+    setInterval(fetchProtectionStatus, 3000);
 
   </script>
 </body>
