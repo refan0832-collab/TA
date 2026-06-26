@@ -117,6 +117,26 @@ def get_by_date(date_str):
     return [dict(r) for r in rows]
 
 # =========================
+# RESET DATA BY DATE
+# =========================
+
+def reset_by_date(date_str):
+
+    with _lock:
+        with sqlite3.connect(DB_FILE) as conn:
+            deleted = conn.execute("""
+                DELETE FROM sensor_history
+                WHERE timestamp >= ? AND timestamp < ?
+            """, (
+                f"{date_str} 00:00:00",
+                f"{date_str} 23:59:59"
+            )).rowcount
+            conn.commit()
+
+    print(f"🗑️  Reset data sensor {date_str}: {deleted} record dihapus")
+    return deleted
+
+# =========================
 # DAFTAR TANGGAL TERSEDIA
 # =========================
 

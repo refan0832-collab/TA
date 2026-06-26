@@ -375,6 +375,21 @@ def sensor_export_today():
     return jsonify({"error": "Tidak ada data hari ini"}), 404
 
 # =========================
+# =========================
+# API SENSOR RESET BY DATE
+# =========================
+
+@app.route("/api/sensor/reset/<date_str>", methods=["POST"])
+def sensor_reset_by_date(date_str):
+    deleted = sensor_storage.reset_by_date(date_str)
+    return jsonify({
+        "status":  "ok",
+        "date":    date_str,
+        "deleted": deleted,
+        "message": f"{deleted} record tanggal {date_str} dihapus"
+    })
+
+# =========================
 # DEBUG
 # =========================
 # =========================

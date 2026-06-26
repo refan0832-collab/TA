@@ -11,6 +11,16 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .dropdown-item:hover {
+      background: rgba(59,130,246,0.15) !important;
+      color: #e2e8f0 !important;
+    }
+    .dropdown-item.selected {
+      background: rgba(59,130,246,0.2) !important;
+      color: #38bdf8 !important;
+    }
+  </style>
 </head>
 <body>
 
@@ -184,11 +194,52 @@
           <div class="section-header">
             <h3>📉 Grafik Real-time</h3>
             <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-              <select id="exportDateSelect" style="background:rgba(255,255,255,0.05); border:1px solid rgba(59,130,246,0.25); color:var(--text-hi); padding:0.4rem 0.75rem; border-radius:6px; font-size:0.78rem; cursor:pointer;">
-                <option value="">Pilih tanggal...</option>
-              </select>
+
+              <!-- CUSTOM DROPDOWN -->
+              <div id="customDropdown" style="position:relative; display:inline-block; user-select:none;">
+                <div id="dropdownBtn" onclick="toggleDropdown()" style="
+                  background: #0f1f35;
+                  border: 1px solid rgba(59,130,246,0.25);
+                  color: #94a3b8;
+                  padding: 0.4rem 2rem 0.4rem 0.75rem;
+                  border-radius: 6px;
+                  font-size: 0.78rem;
+                  cursor: pointer;
+                  min-width: 140px;
+                  position: relative;
+                  white-space: nowrap;
+                ">
+                  <span id="dropdownLabel">Pilih tanggal...</span>
+                  <span style="position:absolute; right:0.5rem; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.7rem;">▼</span>
+                </div>
+                <div id="dropdownList" style="
+                  display: none;
+                  position: absolute;
+                  top: calc(100% + 4px);
+                  left: 0;
+                  min-width: 100%;
+                  background: #0f1f35;
+                  border: 1px solid rgba(59,130,246,0.3);
+                  border-radius: 6px;
+                  z-index: 999;
+                  overflow: hidden;
+                  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+                ">
+                  <div class="dropdown-item" data-value="" onclick="selectDate('', 'Pilih tanggal...')" style="
+                    padding: 0.5rem 0.75rem;
+                    font-size: 0.78rem;
+                    color: #64748b;
+                    cursor: pointer;
+                    border-bottom: 1px solid rgba(59,130,246,0.1);
+                  ">Pilih tanggal...</div>
+                </div>
+              </div>
+              <!-- END CUSTOM DROPDOWN -->
               <button onclick="downloadExcel()" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:#22c55e; padding:0.4rem 1rem; border-radius:6px; font-size:0.78rem; cursor:pointer;">
                 ⬇️ Download Excel
+              </button>
+              <button onclick="openResetSensorModal()" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:#ef4444; padding:0.4rem 1rem; border-radius:6px; font-size:0.78rem; cursor:pointer;">
+                🗑️ Hapus Data
               </button>
             </div>
           </div>
@@ -275,6 +326,19 @@
     </div>
   </div>
 
+  <!-- RESET SENSOR MODAL -->
+  <div class="modal-overlay" id="resetSensorModal">
+    <div class="modal-box">
+      <div class="modal-icon">⚠️</div>
+      <h3>Hapus data sensor?</h3>
+      <p id="resetSensorModalText">Data tanggal ini akan dihapus permanen dari database.</p>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="closeResetSensorModal()">Batal</button>
+        <button class="modal-btn confirm" style="background:#ef4444;" onclick="confirmResetSensor()">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
+
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 
   <script>
@@ -309,6 +373,47 @@
     function doLogout() { document.getElementById('logoutModal').classList.add('active'); }
     function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); }
     function confirmLogout() { sessionStorage.clear(); window.location.href = '/'; }
+
+    // ============================
+    // RESET SENSOR HARI INI
+    // ============================
+    function openResetSensorModal() {
+      if (!selectedDate) {
+        alert('Pilih tanggal terlebih dahulu.');
+        return;
+      }
+      document.getElementById('resetSensorModalText').textContent =
+        `Data tanggal ${selectedDate} akan dihapus permanen dari database.`;
+      document.getElementById('resetSensorModal').classList.add('active');
+    }
+
+    function closeResetSensorModal() {
+      document.getElementById('resetSensorModal').classList.remove('active');
+    }
+
+    async function confirmResetSensor() {
+      const date = selectedDate;
+      closeResetSensorModal();
+      try {
+        const res = await fetch(`/api/sensor/reset/${date}`, { method: 'POST' });
+        if (res.ok) {
+          const today = new Date().toISOString().split('T')[0];
+          if (date === today) {
+            realtimeChart.data.datasets[0].data = [];
+            realtimeChart.data.datasets[1].data = [];
+            realtimeChart.data.datasets[2].data = [];
+            realtimeChart.update('none');
+          }
+          selectDate('', 'Pilih tanggal...');
+          await loadExportDates();
+          alert(`✅ Data tanggal ${date} berhasil dihapus.`);
+        } else {
+          alert('❌ Gagal menghapus data.');
+        }
+      } catch (err) {
+        alert('❌ Tidak bisa menghubungi server.');
+      }
+    }
 
     // ============================
     // CHART INIT
@@ -480,20 +585,62 @@
     }
 
     // ============================
-    // LOAD DAFTAR TANGGAL UNTUK DROPDOWN
+    // CUSTOM DROPDOWN
+    // ============================
+    let selectedDate = '';
+
+    function toggleDropdown() {
+      const list = document.getElementById('dropdownList');
+      list.style.display = list.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function selectDate(value, label) {
+      selectedDate = value;
+      document.getElementById('dropdownLabel').textContent = label;
+      document.getElementById('dropdownLabel').style.color = value ? '#e2e8f0' : '#94a3b8';
+      document.getElementById('dropdownList').style.display = 'none';
+
+      // Update selected styling
+      document.querySelectorAll('.dropdown-item').forEach(el => {
+        el.classList.toggle('selected', el.dataset.value === value);
+      });
+    }
+
+    // Tutup dropdown saat klik di luar
+    document.addEventListener('click', function(e) {
+      if (!document.getElementById('customDropdown').contains(e.target)) {
+        document.getElementById('dropdownList').style.display = 'none';
+      }
+    });
+
+    // ============================
+    // LOAD DAFTAR TANGGAL
     // ============================
     async function loadExportDates() {
       try {
         const res   = await fetch('/api/sensor/dates');
         const dates = await res.json();
-        const sel   = document.getElementById('exportDateSelect');
+        const list  = document.getElementById('dropdownList');
 
-        sel.innerHTML = '<option value="">Pilih tanggal...</option>';
+        list.innerHTML = `
+          <div class="dropdown-item" data-value="" onclick="selectDate('', 'Pilih tanggal...')" style="
+            padding:0.5rem 0.75rem; font-size:0.78rem; color:#64748b;
+            cursor:pointer; border-bottom:1px solid rgba(59,130,246,0.1);
+          ">Pilih tanggal...</div>
+        `;
+
         dates.forEach(d => {
-          const opt = document.createElement('option');
-          opt.value = d;
-          opt.textContent = d;
-          sel.appendChild(opt);
+          const item = document.createElement('div');
+          item.className = 'dropdown-item';
+          item.dataset.value = d;
+          item.textContent = d;
+          item.onclick = () => selectDate(d, d);
+          item.style.cssText = `
+            padding:0.5rem 0.75rem; font-size:0.78rem; color:#e2e8f0;
+            cursor:pointer; border-bottom:1px solid rgba(59,130,246,0.05);
+          `;
+          if (d === selectedDate) item.classList.add('selected');
+          list.appendChild(item);
         });
 
       } catch (err) {
@@ -505,12 +652,11 @@
     // DOWNLOAD EXCEL
     // ============================
     async function downloadExcel() {
-      const date = document.getElementById('exportDateSelect').value;
-      if (!date) {
+      if (!selectedDate) {
         alert('Pilih tanggal terlebih dahulu.');
         return;
       }
-      window.location.href = `/api/sensor/download/${date}`;
+      window.location.href = `/api/sensor/download/${selectedDate}`;
     }
 
     // ============================
