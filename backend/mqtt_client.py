@@ -6,6 +6,7 @@ from datetime import datetime
 
 import paho.mqtt.client as mqtt
 import kwh_storage
+import sensor_storage
 
 # =========================
 # MQTT CONFIG
@@ -185,6 +186,9 @@ def on_message(
 
         # [FIX] interval disesuaikan dengan interval kirim ESP (2 detik)
         kwh_storage.update_kwh(mapped["daya"], interval_seconds=2)
+
+        # [BARU] Simpan ke SQLite
+        sensor_storage.save_sensor(mapped)
 
         # LIMIT HISTORY
         if len(history) > 500:

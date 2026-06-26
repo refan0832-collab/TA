@@ -9,6 +9,7 @@
   <title>📈 PowerMonitor History</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
     /* =============================
@@ -352,7 +353,7 @@
       <div class="hist-table-card">
         <div class="hist-table-header">
           <span class="hist-table-title">📋 Riwayat Harian</span>
-          <button class="hist-export-btn" onclick="exportCSV()">⬇️ Export CSV</button>
+          <button class="hist-export-btn" onclick="exportXLSX()">⬇️ Export Excel</button>
           <button class="hist-reset-btn" onclick="openResetModal()">🗑️ Reset Data</button>
         </div>
         <div class="hist-table-wrap">
@@ -628,31 +629,46 @@
     }
 
     // ============================
-    // EXPORT CSV
+    // EXPORT XLSX (Excel)
     // ============================
-    function exportCSV() {
+    function exportXLSX() {
       if (!allData || allData.length === 0) {
         alert('Belum ada data untuk diekspor.');
         return;
       }
-      const header = ['Tanggal','kWh','Wh','Puncak_W','Rata2_W','Pembacaan','Update_Terakhir'];
-      const rows = allData.map(r => [
-        r.date,
-        r.kwh.toFixed(4),
-        r.wh.toFixed(2),
-        r.peak_watt.toFixed(2),
-        r.avg_watt.toFixed(2),
-        r.samples,
-        r.last_seen || ''
-      ]);
-      const csv  = [header, ...rows].map(r => r.join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = `kwh_history_${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+
+      // Susun data dalam format array-of-objects
+      const rows = allData.map(r => ({
+        'Tanggal':         fmtDate(r.date),
+        'kWh':             Number(r.kwh.toFixed(4)),
+        'Wh':              Number(r.wh.toFixed(2)),
+        'Puncak Daya (W)': Number(r.peak_watt.toFixed(2)),
+        'Rata-rata (W)':   Number(r.avg_watt.toFixed(2)),
+        'Pembacaan':       r.samples,
+        'Update Terakhir': fmtTime(r.last_seen)
+      }));
+
+      // Buat worksheet dari data
+      const ws = XLSX.utils.json_to_sheet(rows);
+
+      // Atur lebar kolom agar rapi
+      ws['!cols'] = [
+        { wch: 14 }, // Tanggal
+        { wch: 10 }, // kWh
+        { wch: 10 }, // Wh
+        { wch: 16 }, // Puncak Daya
+        { wch: 14 }, // Rata-rata
+        { wch: 12 }, // Pembacaan
+        { wch: 16 }  // Update Terakhir
+      ];
+
+      // Buat workbook & tambahkan sheet
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Riwayat kWh');
+
+      // Download sebagai file .xlsx
+      const filename = `kwh_history_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, filename);
     }
 
     // ============================

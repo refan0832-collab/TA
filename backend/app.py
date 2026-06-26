@@ -2,13 +2,15 @@ from flask import (
     Flask,
     jsonify,
     render_template,
-    request
+    request,
+    send_file
 )
 
 from flask_cors import CORS
 
 import mqtt_client
 import kwh_storage
+import sensor_storage
 
 from login import auth_bp, require_auth
 
@@ -49,6 +51,11 @@ app.register_blueprint(auth_bp)
 # =========================
 
 mqtt_client.start_mqtt()
+
+# =========================
+# INIT SQLite
+# =========================
+sensor_storage.init_db()
 
 # =========================
 # RELAY STATE
@@ -292,7 +299,84 @@ def kwh_today():
     return jsonify(kwh_storage.get_kwh_today())
 
 # =========================
+# =========================
+# API SENSOR HISTORY — data hari ini dari SQLite
+# =========================
+
+@app.route("/api/sensor/today")
+def sensor_today():
+    return jsonify(sensor_storage.get_today())
+
+# =========================
+# API SENSOR BY DATE
+# =========================
+
+@app.route("/api/sensor/date/<date_str>")
+def sensor_by_date(date_str):
+    return jsonify(sensor_storage.get_by_date(date_str))
+
+# =========================
+# API DAFTAR TANGGAL TERSEDIA
+# =========================
+
+@app.route("/api/sensor/dates")
+def sensor_dates():
+    return jsonify(sensor_storage.get_available_dates())
+
+# =========================
+# API DAFTAR FILE EXCEL
+# =========================
+
+@app.route("/api/sensor/exports")
+def sensor_exports():
+    return jsonify(sensor_storage.get_export_files())
+
+# =========================
+# API DOWNLOAD FILE EXCEL
+# =========================
+
+@app.route("/api/sensor/download/<date_str>")
+def sensor_download(date_str):
+
+    import os
+
+    # Coba ambil file yang sudah ada
+    export_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "..", "exports",
+        f"sensor_{date_str}.xlsx"
+    )
+
+    # Kalau belum ada, generate dulu
+    if not os.path.exists(export_path):
+        result = sensor_storage.export_daily_excel(date_str)
+        if result is None:
+            return jsonify({"error": "Tidak ada data untuk tanggal tersebut"}), 404
+        export_path = result
+
+    return send_file(
+        export_path,
+        as_attachment=True,
+        download_name=f"sensor_{date_str}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+# =========================
+# API TRIGGER EXPORT + CLEANUP MANUAL
+# =========================
+
+@app.route("/api/sensor/export-today", methods=["POST"])
+def sensor_export_today():
+    today = __import__('datetime').datetime.now().strftime("%Y-%m-%d")
+    result = sensor_storage.export_daily_excel(today)
+    sensor_storage.cleanup_old_data()
+    if result:
+        return jsonify({"status": "ok", "file": f"sensor_{today}.xlsx"})
+    return jsonify({"error": "Tidak ada data hari ini"}), 404
+
+# =========================
 # DEBUG
+# =========================
 # =========================
 
 @app.route("/api/debug")
@@ -325,6 +409,27 @@ def debug():
 # =========================
 
 if __name__ == "__main__":
+
+    # =========================
+    # AUTO EXPORT + CLEANUP HARIAN
+    # =========================
+    import threading
+    import time as _time
+    from datetime import datetime as _dt
+
+    def daily_task():
+        last_date = _dt.now().strftime("%Y-%m-%d")
+        while True:
+            _time.sleep(60)  # cek setiap 1 menit
+            today = _dt.now().strftime("%Y-%m-%d")
+            if today != last_date:
+                print(f"📅 Ganti hari → export {last_date} & cleanup")
+                sensor_storage.export_daily_excel(last_date)
+                sensor_storage.cleanup_old_data()
+                last_date = today
+
+    t = threading.Thread(target=daily_task, daemon=True)
+    t.start()
 
     print()
     print("================================")

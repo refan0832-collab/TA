@@ -9,6 +9,7 @@
   <title>⚡ PowerMonitor Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -182,6 +183,14 @@
         <div class="chart-section">
           <div class="section-header">
             <h3>📉 Grafik Real-time</h3>
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+              <select id="exportDateSelect" style="background:rgba(255,255,255,0.05); border:1px solid rgba(59,130,246,0.25); color:var(--text-hi); padding:0.4rem 0.75rem; border-radius:6px; font-size:0.78rem; cursor:pointer;">
+                <option value="">Pilih tanggal...</option>
+              </select>
+              <button onclick="downloadExcel()" style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.25); color:#22c55e; padding:0.4rem 1rem; border-radius:6px; font-size:0.78rem; cursor:pointer;">
+                ⬇️ Download Excel
+              </button>
+            </div>
           </div>
           <div class="chart-container">
             <canvas id="chart"></canvas>
@@ -297,16 +306,224 @@
     }
 
     // Logout modal
-    function doLogout() {
-      document.getElementById('logoutModal').classList.add('active');
+    function doLogout() { document.getElementById('logoutModal').classList.add('active'); }
+    function closeLogoutModal() { document.getElementById('logoutModal').classList.remove('active'); }
+    function confirmLogout() { sessionStorage.clear(); window.location.href = '/'; }
+
+    // ============================
+    // CHART INIT
+    // ============================
+    const ctx = document.getElementById('chart').getContext('2d');
+    const realtimeChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [
+          {
+            label: 'Tegangan (V)',
+            data: [],
+            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(56,189,248,0.08)',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+            yAxisID: 'yVolt'
+          },
+          {
+            label: 'Arus (A)',
+            data: [],
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34,197,94,0.08)',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+            yAxisID: 'yCurr'
+          },
+          {
+            label: 'Daya (W)',
+            data: [],
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249,115,22,0.08)',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+            yAxisID: 'yPow'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: {
+            labels: { color: '#94a3b8', font: { size: 11 } }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(2,11,24,0.95)',
+            borderColor: 'rgba(59,130,246,0.3)',
+            borderWidth: 1,
+            titleColor: '#94a3b8',
+            bodyColor: '#f0f6ff'
+          }
+        },
+        scales: {
+          x: {
+            type: 'time',
+            time: {
+              unit: 'minute',
+              displayFormats: { minute: 'HH:mm', hour: 'HH:mm' }
+            },
+            grid: { color: 'rgba(59,130,246,0.07)' },
+            ticks: { color: '#64748b', font: { size: 10 }, maxTicksLimit: 10 }
+          },
+          yVolt: {
+            position: 'left',
+            grid: { color: 'rgba(59,130,246,0.07)' },
+            ticks: { color: '#38bdf8', font: { size: 10 }, callback: v => v + ' V' }
+          },
+          yCurr: {
+            position: 'right',
+            grid: { display: false },
+            ticks: { color: '#22c55e', font: { size: 10 }, callback: v => v + ' A' }
+          },
+          yPow: {
+            position: 'right',
+            grid: { display: false },
+            ticks: { color: '#f97316', font: { size: 10 }, callback: v => v + ' W' }
+          }
+        }
+      }
+    });
+
+    // ============================
+    // LOAD DATA HARI INI DARI SQLite
+    // ============================
+    async function loadTodayChart() {
+      try {
+        const res  = await fetch('/api/sensor/today');
+        const data = await res.json();
+
+        if (!data || data.length === 0) return;
+
+        realtimeChart.data.datasets[0].data = data.map(r => ({ x: r.timestamp, y: r.tegangan }));
+        realtimeChart.data.datasets[1].data = data.map(r => ({ x: r.timestamp, y: r.arus }));
+        realtimeChart.data.datasets[2].data = data.map(r => ({ x: r.timestamp, y: r.daya }));
+        realtimeChart.update('none');
+
+      } catch (err) {
+        console.warn('[Chart] load today:', err.message);
+      }
     }
-    function closeLogoutModal() {
-      document.getElementById('logoutModal').classList.remove('active');
+
+    // ============================
+    // UPDATE CHART REALTIME (tambah titik baru)
+    // ============================
+    function appendChartPoint(data) {
+      const ts = new Date().toISOString();
+      realtimeChart.data.datasets[0].data.push({ x: ts, y: data.tegangan });
+      realtimeChart.data.datasets[1].data.push({ x: ts, y: data.arus });
+      realtimeChart.data.datasets[2].data.push({ x: ts, y: data.daya });
+      realtimeChart.update('none');
     }
-    function confirmLogout() {
-      sessionStorage.clear();
-      window.location.href = '/';
+
+    // ============================
+    // FETCH CURRENT DATA (realtime KPI)
+    // ============================
+    async function fetchCurrent() {
+      try {
+        const res  = await fetch('/api/current');
+        const data = await res.json();
+
+        document.getElementById('tegangan').textContent  = data.tegangan.toFixed(1);
+        document.getElementById('arus').textContent      = data.arus.toFixed(2);
+        document.getElementById('daya').textContent      = data.daya.toFixed(1);
+        document.getElementById('frekuensi').textContent = data.frekuensi.toFixed(1);
+        document.getElementById('pf').textContent        = data.pf.toFixed(2);
+
+        document.getElementById('lastUpdateValue').textContent =
+          new Date().toLocaleTimeString('id-ID');
+
+        // Tambah ke chart
+        appendChartPoint(data);
+
+      } catch (err) {
+        console.warn('[Current]', err.message);
+      }
     }
+
+    // ============================
+    // ESP STATUS
+    // ============================
+    async function fetchEspStatus() {
+      try {
+        const res  = await fetch('/api/esp-status');
+        const data = await res.json();
+        const badge = document.getElementById('connectionStatus');
+        const row   = document.getElementById('espStatusRow');
+        const pill  = document.getElementById('espPill');
+        const text  = document.getElementById('espPillText');
+
+        if (data.esp_online) {
+          badge.textContent = '● Online'; badge.style.color = '#22c55e';
+          row.className  = 'status-row state-online';
+          pill.className = 'status-pill pill-online';
+          text.textContent = 'Online';
+        } else {
+          badge.textContent = '● Offline'; badge.style.color = '#ef4444';
+          row.className  = 'status-row state-offline';
+          pill.className = 'status-pill pill-offline';
+          text.textContent = 'Offline';
+        }
+      } catch (_) {}
+    }
+
+    // ============================
+    // LOAD DAFTAR TANGGAL UNTUK DROPDOWN
+    // ============================
+    async function loadExportDates() {
+      try {
+        const res   = await fetch('/api/sensor/dates');
+        const dates = await res.json();
+        const sel   = document.getElementById('exportDateSelect');
+
+        sel.innerHTML = '<option value="">Pilih tanggal...</option>';
+        dates.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d;
+          opt.textContent = d;
+          sel.appendChild(opt);
+        });
+
+      } catch (err) {
+        console.warn('[Dates]', err.message);
+      }
+    }
+
+    // ============================
+    // DOWNLOAD EXCEL
+    // ============================
+    async function downloadExcel() {
+      const date = document.getElementById('exportDateSelect').value;
+      if (!date) {
+        alert('Pilih tanggal terlebih dahulu.');
+        return;
+      }
+      window.location.href = `/api/sensor/download/${date}`;
+    }
+
+    // ============================
+    // INIT
+    // ============================
+    loadTodayChart();       // load data hari ini dari SQLite
+    loadExportDates();      // load daftar tanggal untuk dropdown
+    fetchEspStatus();
+    fetchCurrent();
+
+    setInterval(fetchCurrent,   2000);
+    setInterval(fetchEspStatus, 5000);
+    setInterval(loadExportDates, 60000);  // refresh daftar tanggal tiap 1 menit
   </script>
 </body>
 </html>
