@@ -58,13 +58,27 @@ mqtt_client.start_mqtt()
 sensor_storage.init_db()
 
 # =========================
-# RELAY STATE
+# EXPORT TANGGAL YANG TERLEWAT
+# Cek saat server pertama jalan
 # =========================
 
-relay_state = {
-    19: False,
-    21: False
-}
+def export_missing():
+    import os
+    dates = sensor_storage.get_available_dates()
+    today = __import__('datetime').datetime.now().strftime("%Y-%m-%d")
+    for date in dates:
+        if date == today:
+            continue  # skip hari ini, belum selesai
+        export_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "..", "exports",
+            f"sensor_{date}.xlsx"
+        )
+        if not os.path.exists(export_path):
+            print(f"📤 Export terlewat ditemukan: {date}, mengexport...")
+            sensor_storage.export_daily_excel(date)
+
+export_missing()
 
 # =========================
 # FRONTEND ROUTES
@@ -72,37 +86,19 @@ relay_state = {
 
 @app.route("/")
 def login_page():
-
-    return render_template(
-        "login.html"
-    )
-
-# =========================
+    return render_template("login.html")
 
 @app.route("/dashboard")
 def dashboard():
-
-    return render_template(
-        "index.html"
-    )
-
-# =========================
+    return render_template("index.html")
 
 @app.route("/history-page")
 def history_page():
-
-    return render_template(
-        "history.html"
-    )
-
-# =========================
+    return render_template("history.html")
 
 @app.route("/controller")
 def controller_page():
-
-    return render_template(
-        "controller.html"
-    )
+    return render_template("controller.html")
 
 # =========================
 # API RELAY CONTROL
@@ -125,36 +121,30 @@ def relay_control():
     if not isinstance(state, bool):
         return jsonify({"error": "State harus boolean (true/false)"}), 400
 
-    payload = {
-        "pin": pin,
-        "state": state
-    }
+    payload = {"pin": pin, "state": state}
 
     success = mqtt_client.publish_relay(payload)
 
     if not success:
         return jsonify({"error": "Gagal mengirim perintah ke MQTT"}), 500
 
-    relay_state[pin] = state
-
     print(f"🔁 Relay PIN {pin} → {'ON' if state else 'OFF'}")
 
-    return jsonify({
-        "pin":    pin,
-        "state":  state,
-        "status": "ok"
-    }), 200
+    return jsonify({"pin": pin, "state": state, "status": "ok"}), 200
 
 # =========================
 # API RELAY STATUS
+# [DIUPDATE] baca dari ESP32 via MQTT, bukan RAM
 # =========================
 
 @app.route("/api/relay/status")
 def relay_status():
 
+    data = mqtt_client.get_current_data()
+
     return jsonify({
-        19: relay_state[19],
-        21: relay_state[21]
+        "19": bool(data.get("relay19", False)),
+        "21": bool(data.get("relay21", False))
     })
 
 # =========================
@@ -321,7 +311,21 @@ def sensor_by_date(date_str):
 
 @app.route("/api/sensor/dates")
 def sensor_dates():
-    return jsonify(sensor_storage.get_available_dates())
+
+    # Tanggal dari SQLite (7 hari terakhir)
+    db_dates = sensor_storage.get_available_dates()
+
+    # Tanggal dari file Excel di folder exports/
+    excel_files = sensor_storage.get_export_files()
+    excel_dates = [f["date"] for f in excel_files]
+
+    # Gabungkan, hilangkan duplikat, urutkan terbaru dulu
+    all_dates = sorted(
+        list(set(db_dates + excel_dates)),
+        reverse=True
+    )
+
+    return jsonify(all_dates)
 
 # =========================
 # API DAFTAR FILE EXCEL

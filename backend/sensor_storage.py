@@ -118,10 +118,12 @@ def get_by_date(date_str):
 
 # =========================
 # RESET DATA BY DATE
+# Hapus dari SQLite + file Excel
 # =========================
 
 def reset_by_date(date_str):
 
+    # 1. Hapus dari SQLite
     with _lock:
         with sqlite3.connect(DB_FILE) as conn:
             deleted = conn.execute("""
@@ -133,7 +135,21 @@ def reset_by_date(date_str):
             )).rowcount
             conn.commit()
 
-    print(f"🗑️  Reset data sensor {date_str}: {deleted} record dihapus")
+    print(f"🗑️  Reset SQLite {date_str}: {deleted} record dihapus")
+
+    # 2. Hapus file Excel kalau ada
+    export_path = os.path.join(
+        EXPORT_DIR,
+        f"sensor_{date_str}.xlsx"
+    )
+
+    if os.path.exists(export_path):
+        try:
+            os.remove(export_path)
+            print(f"🗑️  File Excel sensor_{date_str}.xlsx dihapus")
+        except Exception as e:
+            print(f"❌ Gagal hapus file Excel: {e}")
+
     return deleted
 
 # =========================
