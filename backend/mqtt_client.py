@@ -32,6 +32,8 @@ current_data = {
     "energy":       0,       # [BARU] kWh akumulatif dari PZEM
     "overvoltage":  False,   # [BARU] status relay proteksi PIN 22
     "undervoltage": False,   # [BARU] status relay proteksi PIN 23
+    "relay19":      False,   # status aktual relay PIN 19 dari ESP32
+    "relay21":      False,   # status aktual relay PIN 21 dari ESP32
     "timestamp":    None
 }
 
@@ -164,6 +166,22 @@ def on_message(
                 bool(
                     data.get(
                         "undervoltage",
+                        False
+                    )
+                ),
+
+            "relay19":
+                bool(
+                    data.get(
+                        "relay19",
+                        False
+                    )
+                ),
+
+            "relay21":
+                bool(
+                    data.get(
+                        "relay21",
                         False
                     )
                 ),
