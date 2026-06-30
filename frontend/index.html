@@ -190,10 +190,13 @@
       <section class="content-grid">
 
         <!-- CHART -->
+        <!-- WRAPPER KOLOM CHART -->
+        <div style="display:flex; flex-direction:column; gap:1.25rem; min-width:0;">
+
         <div class="chart-section">
           <div class="section-header">
             <h3>📉 Grafik Real-time</h3>
-            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; min-width:0; justify-content:flex-end;">
 
               <!-- CUSTOM DROPDOWN -->
               <div id="customDropdown" style="position:relative; display:inline-block; user-select:none;">
@@ -248,8 +251,21 @@
           </div>
         </div>
 
+        <!-- CHART kWh REALTIME -->
+        <div class="chart-section">
+          <div class="section-header">
+            <h3>⚡ Konsumsi kWh Hari Ini (Real-time)</h3>
+          </div>
+          <div class="chart-container">
+            <canvas id="kwhRealtimeChart"></canvas>
+          </div>
+        </div>
+
+        </div>
+        <!-- END WRAPPER KOLOM CHART -->
+
         <!-- STATUS PANEL -->
-        <div class="status-section">
+        <div class="status-section" style="position: sticky; top: 1.25rem; align-self: start;">
           <div class="section-header">
             <h3>📋 Status Sistem</h3>
           </div>
@@ -503,8 +519,66 @@
     });
 
     // ============================
-    // LOAD DATA HARI INI DARI SQLite
+    // CHART kWh REALTIME INIT
     // ============================
+    const kwhCtx = document.getElementById('kwhRealtimeChart').getContext('2d');
+    const kwhRealtimeChart = new Chart(kwhCtx, {
+      type: 'line',
+      data: {
+        datasets: [
+          {
+            label: 'kWh Kumulatif',
+            data: [],
+            borderColor: '#a855f7',
+            backgroundColor: 'rgba(168,85,247,0.12)',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.2,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(2,11,24,0.95)',
+            borderColor: 'rgba(168,85,247,0.3)',
+            borderWidth: 1,
+            titleColor: '#94a3b8',
+            bodyColor: '#f0f6ff',
+            callbacks: {
+              label: ctx => `  ${ctx.parsed.y.toFixed(4)} kWh`
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'time',
+            time: {
+              unit: 'minute',
+              displayFormats: { minute: 'HH:mm', hour: 'HH:mm' }
+            },
+            grid: { color: 'rgba(168,85,247,0.07)' },
+            ticks: { color: '#64748b', font: { size: 10 }, maxTicksLimit: 10 }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(168,85,247,0.07)' },
+            ticks: {
+              color: '#a855f7',
+              font: { size: 10 },
+              callback: v => v.toFixed(2) + ' kWh'
+            }
+          }
+        }
+      }
+    });
     async function loadTodayChart() {
       try {
         const res  = await fetch('/api/sensor/today');
@@ -516,6 +590,10 @@
         realtimeChart.data.datasets[1].data = data.map(r => ({ x: r.timestamp, y: r.arus }));
         realtimeChart.data.datasets[2].data = data.map(r => ({ x: r.timestamp, y: r.daya }));
         realtimeChart.update('none');
+
+        // Chart kWh
+        kwhRealtimeChart.data.datasets[0].data = data.map(r => ({ x: r.timestamp, y: r.energy || 0 }));
+        kwhRealtimeChart.update('none');
 
       } catch (err) {
         console.warn('[Chart] load today:', err.message);
@@ -531,6 +609,10 @@
       realtimeChart.data.datasets[1].data.push({ x: ts, y: data.arus });
       realtimeChart.data.datasets[2].data.push({ x: ts, y: data.daya });
       realtimeChart.update('none');
+
+      // Chart kWh
+      kwhRealtimeChart.data.datasets[0].data.push({ x: ts, y: data.energy || 0 });
+      kwhRealtimeChart.update('none');
     }
 
     // ============================

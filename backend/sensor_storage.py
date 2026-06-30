@@ -87,7 +87,7 @@ def get_today():
         with sqlite3.connect(DB_FILE) as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute("""
-                SELECT timestamp, tegangan, arus, daya, frekuensi, pf
+                SELECT timestamp, tegangan, arus, daya, frekuensi, pf, energy
                 FROM sensor_history
                 WHERE timestamp >= ?
                 ORDER BY timestamp ASC
@@ -234,7 +234,8 @@ def export_daily_excel(date_str=None):
         "Arus (A)",
         "Daya (W)",
         "Frekuensi (Hz)",
-        "Power Factor"
+        "Power Factor",
+        "Energy (kWh)"
     ]
 
     for col, h in enumerate(headers, 1):
@@ -244,7 +245,7 @@ def export_daily_excel(date_str=None):
         cell.alignment = header_align
 
     # LEBAR KOLOM
-    col_widths = [22, 14, 10, 10, 16, 14]
+    col_widths = [22, 14, 10, 10, 16, 14, 14]
     for i, w in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
@@ -256,11 +257,12 @@ def export_daily_excel(date_str=None):
         ws.cell(row=row_idx, column=4, value=round(r["daya"],      2))
         ws.cell(row=row_idx, column=5, value=round(r["frekuensi"], 2))
         ws.cell(row=row_idx, column=6, value=round(r["pf"],        2))
+        ws.cell(row=row_idx, column=7, value=round(r.get("energy", 0), 4))
 
         # Warna baris selang-seling
         if row_idx % 2 == 0:
             fill = PatternFill("solid", fgColor="F0F4F8")
-            for col in range(1, 7):
+            for col in range(1, 8):
                 ws.cell(row=row_idx, column=col).fill = fill
 
     wb.save(export_path)

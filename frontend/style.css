@@ -534,7 +534,7 @@ body::before {
 /* ========================= */
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: minmax(0, 1fr) 320px;
   gap: 1.25rem;
 }
 
@@ -549,12 +549,15 @@ body::before {
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-bottom: 1.25rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--border);
@@ -566,12 +569,18 @@ body::before {
   font-weight: 700;
   color: var(--text-hi);
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .chart-container {
   flex: 1;
   min-height: 320px;
+  min-width: 0;
   position: relative;
+}
+
+.chart-container canvas {
+  max-width: 100%;
 }
 
 /* ========================= */
@@ -1207,6 +1216,7 @@ body::before {
     flex-direction: row;
     flex-wrap: wrap;
     gap: 1rem;
+    position: static !important;
   }
   .status-section .section-header {
     width: 100%;
