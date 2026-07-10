@@ -3,6 +3,8 @@ import os
 import shutil
 import threading
 from datetime import datetime
+import pytz
+_WIB = pytz.timezone("Asia/Jakarta")
 
 # =========================
 # PATH FILE
@@ -80,13 +82,19 @@ def _save(data):
         os.replace(TEMP_FILE, DATA_FILE)
 
     except Exception as e:
-        print(f"❌ Gagal simpan kWh: {e}")
-
-        if os.path.exists(TEMP_FILE):
-            try:
-                os.remove(TEMP_FILE)
-            except:
-                pass
+        print(f"⚠️  Gagal simpan via tmp, coba langsung: {e}")
+        # Fallback: tulis langsung ke file utama
+        try:
+            with open(DATA_FILE, "w") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e2:
+            print(f"❌ Gagal simpan kWh: {e2}")
+        finally:
+            if os.path.exists(TEMP_FILE):
+                try:
+                    os.remove(TEMP_FILE)
+                except:
+                    pass
 
 # =========================
 # UPDATE kWh
@@ -94,7 +102,7 @@ def _save(data):
 
 def update_kwh(daya_watt, interval_seconds=2):
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(_WIB).strftime("%Y-%m-%d")
 
     with _lock:
 
@@ -108,8 +116,8 @@ def update_kwh(daya_watt, interval_seconds=2):
                 "samples":    0,
                 "peak_watt":  0.0,
                 "avg_watt":   0.0,
-                "first_seen": datetime.now().isoformat(),
-                "last_seen":  datetime.now().isoformat()
+                "first_seen": datetime.now(_WIB).isoformat(),
+                "last_seen":  datetime.now(_WIB).isoformat()
             }
 
         rec = db[today]
@@ -117,7 +125,7 @@ def update_kwh(daya_watt, interval_seconds=2):
         rec["wh"]      += daya_watt * interval_seconds / 3600.0
         rec["kwh"]      = rec["wh"] / 1000.0
         rec["samples"] += 1
-        rec["last_seen"] = datetime.now().isoformat()
+        rec["last_seen"] = datetime.now(_WIB).isoformat()
 
         n = rec["samples"]
         rec["avg_watt"] = (rec["avg_watt"] * (n - 1) + daya_watt) / n
@@ -176,7 +184,7 @@ def get_kwh_history():
 
 def get_kwh_today():
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(_WIB).strftime("%Y-%m-%d")
 
     with _lock:
         db = _load()
