@@ -335,6 +335,10 @@
     const relayState = { 19: false, 21: false };
     const logItems = [];
 
+    // Mencegah polling menimpa UI saat baru kirim perintah
+    const pendingCommand = { 19: false, 21: false };
+    const PENDING_TIMEOUT = 10000; // 10 detik
+
     // ===============================
     // CLOCK
     // ===============================
@@ -463,6 +467,12 @@
         relayState[pin] = isOn;
         updateRelayUI(pin, isOn);
 
+        // Set pending — cegah polling timpa UI selama 10 detik
+        pendingCommand[pin] = true;
+        setTimeout(() => {
+          pendingCommand[pin] = false;
+        }, PENDING_TIMEOUT);
+
         // Add to log
         addLog(pin, isOn);
 
@@ -551,10 +561,14 @@
         const data = await res.json();
 
         // Sync UI dengan state dari server
+        // Fix: server kirim string key "19"/"21"
+        // Skip kalau baru kirim perintah (pendingCommand aktif)
         [19, 21].forEach(pin => {
-          if (data[pin] !== undefined && data[pin] !== relayState[pin]) {
-            relayState[pin] = data[pin];
-            updateRelayUI(pin, data[pin]);
+          if (pendingCommand[pin]) return;
+          const serverState = data[String(pin)];
+          if (serverState !== undefined && serverState !== relayState[pin]) {
+            relayState[pin] = serverState;
+            updateRelayUI(pin, serverState);
           }
         });
 

@@ -61,136 +61,15 @@ class PowerMonitor {
 
   // ===============================
   // INIT CHART
+  // Dinonaktifkan — chart dihandle di index.html
   // ===============================
 
   initChart() {
-
-    const ctx =
-      document.getElementById(
-        "chart"
-      );
-
-    if (!ctx) return;
-
-    this.data = {
-
-      labels: [],
-
-      datasets: [
-
-        {
-          label:
-            "Tegangan (V)",
-
-          data: [],
-
-          borderColor:
-            "#3b82f6",
-
-          backgroundColor:
-            "rgba(59,130,246,0.15)",
-
-          tension: 0.35,
-
-          fill: true
-        },
-
-        {
-          label:
-            "Arus (A)",
-
-          data: [],
-
-          borderColor:
-            "#22c55e",
-
-          backgroundColor:
-            "rgba(34,197,94,0.15)",
-
-          tension: 0.35,
-
-          fill: false
-        },
-
-        {
-          label:
-            "Daya (W)",
-
-          data: [],
-
-          borderColor:
-            "#f97316",
-
-          backgroundColor:
-            "rgba(249,115,22,0.15)",
-
-          tension: 0.35,
-
-          fill: true
-        }
-      ]
-    };
-
-    this.chart = new Chart(ctx, {
-
-      type: "line",
-
-      data: this.data,
-
-      options: {
-
-        responsive: true,
-
-        maintainAspectRatio: false,
-
-        animation: false,
-
-        plugins: {
-
-          legend: {
-
-            labels: {
-
-              color: "#fff"
-            }
-          }
-        },
-
-        scales: {
-
-          x: {
-
-            ticks: {
-
-              color: "#cbd5e1"
-            },
-
-            grid: {
-
-              color:
-                "rgba(255,255,255,0.05)"
-            }
-          },
-
-          y: {
-
-            ticks: {
-
-              color: "#cbd5e1"
-            },
-
-            grid: {
-
-              color:
-                "rgba(255,255,255,0.05)"
-            }
-          }
-        }
-      }
-    });
+    // Chart sudah diinisialisasi di index.html
+    return;
   }
 
-  // ===============================
+    // ===============================
   // FETCH DATA
   // ===============================
 
@@ -514,53 +393,8 @@ class PowerMonitor {
   // ===============================
 
   updateChart(d) {
-
-    if (!this.chart || !d)
-      return;
-
-    const time =
-      new Date()
-      .toLocaleTimeString(
-        "id-ID"
-      );
-
-    this.data.labels.push(
-      time
-    );
-
-    this.data.datasets[0]
-      .data.push(
-        d.voltage
-      );
-
-    this.data.datasets[1]
-      .data.push(
-        d.current
-      );
-
-    this.data.datasets[2]
-      .data.push(
-        d.power
-      );
-
-    // LIMIT
-    if (
-
-      this.data.labels.length >
-      20
-
-    ) {
-
-      this.data.labels.shift();
-
-      this.data.datasets
-        .forEach(ds => {
-
-          ds.data.shift();
-        });
-    }
-
-    this.chart.update();
+    // Chart diupdate di index.html via appendChartPoint()
+    return;
   }
 
   // ===============================

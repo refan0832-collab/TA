@@ -1,5 +1,7 @@
 FROM python:3.12-slim
 
+ENV TZ=Asia/Jakarta
+
 WORKDIR /app
 
 # install dependency python
