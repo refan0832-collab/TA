@@ -193,8 +193,8 @@
         <!-- WRAPPER KOLOM CHART -->
         <div style="display:flex; flex-direction:column; gap:1.25rem; min-width:0;">
 
-        <div class="chart-section">
-          <div class="section-header">
+        <div class="chart-section" style="overflow:visible;">
+          <div class="section-header" style="overflow:visible; position:relative; z-index:100;">
             <h3>📉 Grafik Real-time</h3>
             <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; min-width:0; justify-content:flex-end;">
 
@@ -224,7 +224,7 @@
                   background: #0f1f35;
                   border: 1px solid rgba(59,130,246,0.3);
                   border-radius: 6px;
-                  z-index: 999;
+                  z-index: 9999;
                   overflow: hidden;
                   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
                 ">
@@ -671,9 +671,46 @@
     // ============================
     let selectedDate = '';
 
+    let _dropdownScrollHandler = null;
+
     function toggleDropdown() {
       const list = document.getElementById('dropdownList');
-      list.style.display = list.style.display === 'none' ? 'block' : 'none';
+      const btn  = document.getElementById('dropdownBtn');
+
+      if (list.style.display === 'block') {
+        list.style.display = 'none';
+        if (_dropdownScrollHandler) {
+          window.removeEventListener('scroll', _dropdownScrollHandler, true);
+          _dropdownScrollHandler = null;
+        }
+        return;
+      }
+
+      // Pindahkan ke body
+      document.body.appendChild(list);
+      list.style.display = 'block';
+
+      function positionList() {
+        const rect       = btn.getBoundingClientRect();
+        const listHeight = list.offsetHeight || 300;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+
+        list.style.position = 'fixed';
+        list.style.left     = rect.left + 'px';
+        list.style.minWidth = rect.width + 'px';
+        list.style.zIndex   = '99999';
+        list.style.maxHeight = '300px';
+        list.style.overflowY = 'auto';
+        list.style.bottom   = 'auto';
+        list.style.top      = (rect.bottom + 4) + 'px';
+      }
+
+      positionList();
+
+      // Update posisi saat scroll
+      _dropdownScrollHandler = positionList;
+      window.addEventListener('scroll', _dropdownScrollHandler, true);
     }
 
     function selectDate(value, label) {
@@ -690,8 +727,13 @@
 
     // Tutup dropdown saat klik di luar
     document.addEventListener('click', function(e) {
-      if (!document.getElementById('customDropdown').contains(e.target)) {
-        document.getElementById('dropdownList').style.display = 'none';
+      const list = document.getElementById('dropdownList');
+      if (!document.getElementById('customDropdown').contains(e.target) && !list.contains(e.target)) {
+        list.style.display = 'none';
+        if (_dropdownScrollHandler) {
+          window.removeEventListener('scroll', _dropdownScrollHandler, true);
+          _dropdownScrollHandler = null;
+        }
       }
     });
 
