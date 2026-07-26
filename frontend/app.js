@@ -198,8 +198,8 @@ class PowerMonitor {
 
       } else if (
 
-        d.voltage >= 200 &&
-        d.voltage <= 240
+        d.voltage >= 198 &&
+        d.voltage <= 220
 
       ) {
 
